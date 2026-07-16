@@ -28,7 +28,9 @@ beforeAll(async () => {
   // fake ONLY the OKX facilitator settle call; everything else (the demo
   // runner's localhost probe/replay) goes through the real fetch.
   vi.stubGlobal("fetch", (async (url: string | URL | Request, opts?: RequestInit) => {
-    if (String(url).includes("web3.okx.com")) {
+    let host = "";
+    try { host = new URL(String(url)).hostname; } catch { /* relative/opaque URL */ }
+    if (host === "web3.okx.com") {
       return { json: async () => ({ success: true, status: "success", transaction: "0xfeedface" }) } as Response;
     }
     return realFetch(url as string, opts);

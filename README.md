@@ -13,12 +13,12 @@
 
   <br/>
 
-  ![Node.js 20](https://img.shields.io/badge/Node.js_20-339933?style=flat&logo=node.js&logoColor=white)
-  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
-  ![Express](https://img.shields.io/badge/Express_4-000000?style=flat&logo=express&logoColor=white)
-  ![Vitest](https://img.shields.io/badge/Vitest-124_tests-6E9F18?style=flat&logo=vitest&logoColor=white)
-  ![OKX x402](https://img.shields.io/badge/OKX-x402-000000?style=flat&logo=okx&logoColor=white)
-  ![X Layer](https://img.shields.io/badge/X_Layer-eip155%3A196-purple?style=flat)
+  ![Node.js 20](https://img.shields.io/badge/Node.js_20-339933?style=for-the-badge&logo=node.js&logoColor=white)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+  ![Express](https://img.shields.io/badge/Express_4-000000?style=for-the-badge&logo=express&logoColor=white)
+  ![Vitest](https://img.shields.io/badge/Vitest-124_tests-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+  ![OKX x402](https://img.shields.io/badge/OKX-x402-000000?style=for-the-badge&logo=okx&logoColor=white)
+  ![X Layer](https://img.shields.io/badge/X_Layer-eip155%3A196-purple?style=for-the-badge)
   [![CI](https://github.com/edycutjong/clvscout/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/clvscout/actions/workflows/ci.yml)
 
 </div>

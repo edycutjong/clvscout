@@ -305,7 +305,7 @@
       return r.json();
     }
     function showTrace(id, t){
-      const line = t.challenge_line.replace("402 challenge:", "402 challenge:");
+      const line = t.challenge_line;
       el(id).innerHTML =
         `buyer ${t.buyer_address.slice(0,10)}… (throwaway key)\n` +
         `${line}\n` +
