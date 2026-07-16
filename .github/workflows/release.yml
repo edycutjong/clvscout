@@ -1,0 +1,35 @@
+name: Release
+
+# Fully-automatic semantic versioning: analyzes conventional commits on main,
+# then tags + publishes a GitHub Release (which pages.yml can ship). Uses the
+# built-in GITHUB_TOKEN — no extra secret required.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # create tags + releases
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # semantic-release needs full history + tags
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install semantic-release
+        run: npm i -g semantic-release
+      - name: Release
+        run: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
