@@ -46,7 +46,9 @@ export const OKX_FACILITATOR_PREFIX = "/api/v6/pay/x402";
 
 export const EXPLORER = "https://web3.okx.com/explorer/x-layer";
 
-export const API_BASE_URL = process.env.API_BASE_URL ?? `http://localhost:${PORT}`;
+// 127.0.0.1 (not "localhost"): on Linux hosts the demo runner's self-fetch to
+// "localhost" can resolve to ::1 (IPv6) while Express binds 0.0.0.0 (IPv4) → "fetch failed".
+export const API_BASE_URL = process.env.API_BASE_URL ?? `http://127.0.0.1:${PORT}`;
 
 export const AUDIT_MAX_BETS = 25;
 export const LOW_SAMPLE_THRESHOLD = 10;
