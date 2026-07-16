@@ -7,8 +7,8 @@
   <br/>
 
   [![API](https://img.shields.io/badge/API-live-2ea043?style=for-the-badge&logo=railway&logoColor=white)](https://api.clvscout.edycu.dev/health)
-  [![Landing](https://img.shields.io/badge/Landing-deploy_pending-9e9e9e?style=for-the-badge&logo=github&logoColor=white)](https://clvscout.edycu.dev/)
-  [![Pitch Deck](https://img.shields.io/badge/Pitch_Deck-coming_soon-9e9e9e?style=for-the-badge)](https://clvscout.edycu.dev/pitch)
+  [![Landing](https://img.shields.io/badge/Landing-live-2ea043?style=for-the-badge&logo=github&logoColor=white)](https://clvscout.edycu.dev/)
+  [![Pitch Deck](https://img.shields.io/badge/Pitch_Deck-live-FF007A?style=for-the-badge)](https://clvscout.edycu.dev/pitch)
   [![YouTube Demo](https://img.shields.io/badge/YouTube_Demo-coming_soon-9e9e9e?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/placeholder)
   [![HackQuest](https://img.shields.io/badge/HackQuest-listing_pending-9e9e9e?style=for-the-badge)](https://www.hackquest.io/hackathons/OKXAI-Genesis-Hackathon)
 
