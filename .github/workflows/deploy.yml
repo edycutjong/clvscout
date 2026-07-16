@@ -1,0 +1,37 @@
+name: Deploy to Railway
+
+# Auto-deploys the clvscout service (project: okxai-genesis-2026) on green pushes to main.
+# Requires repo secret RAILWAY_TOKEN = a Railway PROJECT token (Project → Settings → Tokens,
+# scoped to okxai-genesis-2026 / production). PORT is injected by Railway — never set it here.
+on:
+  push:
+    branches: [main]
+    paths-ignore: # don't redeploy the API for docs-only changes
+      - "**.md"
+      - "docs/**"
+      - ".github/**"
+  workflow_dispatch: # manual redeploy button
+
+concurrency:
+  group: railway-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install deps
+        run: npm ci
+      - name: Test gate (don't deploy a red build)
+        run: npm test
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+      - name: Deploy clvscout
+        run: railway up --service clvscout --ci
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
