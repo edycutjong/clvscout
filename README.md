@@ -132,6 +132,41 @@ hand-typed. Full walkthrough (including the "won the bet and still made a
 mistake" single-grade reveal, and the UNGRADED honesty path) is in
 [`DEMO.md`](DEMO.md).
 
+## 🔗 Live On-Chain Proof — X Layer mainnet
+
+**The first real x402 paid-call has settled on-chain.** A live `POST /api/grade`
+call was paid from a funded **OKX Agentic Wallet** — TEE-signed EIP-3009
+`TransferWithAuthorization`, replayed as `X-PAYMENT` — and **settled on X Layer
+mainnet** (`eip155:196`) through the OKX Facilitator: a real **0.01 USD₮0**
+transfer, status **`SUCCESS`**. This is the exact `probe → 402 → sign → pay →
+200 → settle` rail the whole product is built on, exercised end-to-end against
+the deployed service (not a local demo).
+
+<div align="center">
+  <img src="docs/screenshots/onchain-receipt.png" alt="On-chain settlement receipt — 0.01 USD₮0 on X Layer mainnet, status SUCCESS" width="100%">
+</div>
+
+| Field | Value |
+|---|---|
+| **Tx hash** | [`0x33e65fc9…45c903d8`](https://web3.okx.com/explorer/x-layer/tx/0x33e65fc96d1abed0bb5229337f37f0106e1fc38648095dd43567042245c903d8) |
+| **Network** | X Layer mainnet · `eip155:196` (zero-gas USD₮0 promo) |
+| **Asset / amount** | USD₮0 (`0x779ded0c…3736`) · **0.01** (10000 atomic, 6dp) |
+| **Payer → payTo** | `0x3e86…dbeb` → `0x0000…dEaD` |
+| **Paid route** | `POST /api/grade` → **HTTP 200** (`clv_grade: C`, `clv_pct: -2.08`) |
+| **Settlement** | OKX Facilitator → `is_placeholder: false` |
+
+Re-verify it yourself against the running service (free, no wallet needed):
+
+```bash
+curl -s -X POST https://api.clvscout.edycu.dev/api/receipts/verify \
+  -H "Content-Type: application/json" \
+  -d '{"txHash":"0x33e65fc96d1abed0bb5229337f37f0106e1fc38648095dd43567042245c903d8"}'
+# -> {"live":true,"source":"OKX Facilitator GET /settle/status","explorer_url":"…"}
+```
+
+Full captured evidence (raw 402, signed authorization, paid 200 body, on-chain
+tx record, balance delta) is in [`docs/screenshots/PROOF.md`](docs/screenshots/PROOF.md).
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -151,6 +186,11 @@ npm run api               # boots on :4021
 ```
 
 **Then open [http://localhost:4021/](http://localhost:4021/)** — a served **visible proof page** that drives the live paid API and *renders* the reveal: the tout who's "+12% / 3-2" collapsing to a red **Sharp Score 40.7/100**, the **WON-but-graded-C** card, the UNGRADED refusal, and the live calibration table. Every button fires a real x402 round-trip (probe → 402 → sign EIP-3009 → pay → 200), signed server-side with a throwaway key because browsers can't sign — nothing on the page is mocked (`web/`, `api/demoRunner.ts`). This is the 90-second demo surface — see [`DEMO.md`](DEMO.md).
+
+<div align="center">
+  <img src="docs/screenshots/live-proof-page.png" alt="CLV Scout live proof page — every number is a real x402-paid call to the running service" width="100%">
+  <br/><em>The live proof surface — every card is a real x402-paid call against <code>api.clvscout.edycu.dev</code>.</em>
+</div>
 
 Or drive it from the terminal:
 
@@ -272,11 +312,14 @@ clvscout/
   round-number CLV cutoffs decided up front — they are not tuned to make this
   particular 24-row seed ledger look good, and `/api/calibration` states that
   explicitly alongside the live truth table.
-- **Live API — but no real on-chain settlement yet.** The service is deployed on Railway at
+- **Live API — with a real on-chain settlement on record.** The service is deployed on Railway at
   **`https://api.clvscout.edycu.dev`** (`/health` 200; paid routes return real `402` challenges,
-  free routes 200). What's **not** done: no real paid call has settled on-chain yet (no receipt),
-  and the static landing/pitch on `clvscout.edycu.dev` (Pages) is still pending DNS — it's live at
-  `edycutjong.github.io/clvscout` meanwhile. Every number here remains reproducible from source.
+  free routes 200), and a real paid call has now **settled on X Layer mainnet** — tx
+  [`0x33e65fc9…45c903d8`](https://web3.okx.com/explorer/x-layer/tx/0x33e65fc96d1abed0bb5229337f37f0106e1fc38648095dd43567042245c903d8),
+  0.01 USD₮0, status `SUCCESS` (see [§Live On-Chain Proof](#-live-on-chain-proof--x-layer-mainnet)).
+  Every number here remains reproducible from source. Remaining scope: only a single grade-route
+  settlement is captured so far (the `$0.20` audit route uses the identical rail), and per-call
+  settlement on the deployment depends on the server's OKX Facilitator credentials being present.
 - **Narrow market coverage by design.** World Cup 2026 knockout markets only
   (`fixtures/picks.csv`); coverage is stated in every `/api/calibration`
   response rather than hidden.
