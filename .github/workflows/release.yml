@@ -2,7 +2,7 @@ name: Release
 
 # Fully-automatic semantic versioning: analyzes conventional commits on main,
 # then tags + publishes a GitHub Release (which pages.yml can ship). Uses the
-# built-in GITHUB_TOKEN — no extra secret required.
+# RELEASE_TOKEN (a PAT) so the published release triggers pages.yml.
 on:
   push:
     branches: [main]
@@ -32,4 +32,7 @@ jobs:
       - name: Release
         run: semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAT so the published-release event chains to pages.yml — the built-in
+          # GITHUB_TOKEN cannot trigger other workflows. Falls back to GITHUB_TOKEN
+          # until RELEASE_TOKEN is set, so releases never break in the meantime.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
