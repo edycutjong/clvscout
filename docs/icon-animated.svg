@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CLV Scout mark — a price path beating the closing line, sighted in a scout reticle">
+  <!-- CLV Scout icon. Fully standalone: brand hex values inlined from _tokens.css
+       (graphite #0B0E11, verdict green #00D084, grade amber #FFB300).
+       Living icon: CSS @keyframes only — no scripts, no external refs.
+       Animation language mirrors readme-hero.svg's reticle (dashed lock-on ring spins,
+       ticks stay fixed, core pulses, ping ring expands, closing line drifts,
+       a light shimmer travels the price path). All base states are the complete
+       static icon, so frozen PNG exports stay polished. -->
+  <defs>
+    <linearGradient id="pathGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D084" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#00D084"/>
+      <stop offset="100%" stop-color="#FFB300"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="70%" cy="26%" r="85%">
+      <stop offset="0%" stop-color="#00D084" stop-opacity="0.20"/>
+      <stop offset="55%" stop-color="#00D084" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#00D084" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00D084" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#00D084" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    /* ---- gentle infinite idles; every base state = finished static icon ---- */
+    .breathe-bg { animation: breatheBg 9s ease-in-out infinite; }
+    .closedrift { animation: closedrift 7s linear infinite; }
+    .spin  { transform-box: fill-box; transform-origin: center;
+             animation: iconspin 26s linear infinite; }
+    .core  { transform-box: fill-box; transform-origin: center;
+             animation: corepulse 3.8s ease-in-out infinite; }
+    .halo  { transform-box: fill-box; transform-origin: center; opacity: 0.45;
+             animation: halopulse 3.8s ease-in-out infinite; }
+    .ping  { transform-box: fill-box; transform-origin: center; opacity: 0;
+             animation: ping 5.6s ease-out 1.4s infinite; }
+    .shimmer { opacity: 0; stroke-dasharray: 12 188; stroke-dashoffset: 12;
+               animation: shimmer 7.5s cubic-bezier(0.5, 0, 0.4, 1) 0.9s infinite; }
+
+    @keyframes breatheBg { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+    /* dasharray 2 56 repeats every 58 units → -58 offset loops seamlessly */
+    @keyframes closedrift { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -58; } }
+    @keyframes iconspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes corepulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+    @keyframes halopulse { 0%, 100% { opacity: 0.45; transform: scale(1); }
+                           50% { opacity: 0.85; transform: scale(1.22); } }
+    @keyframes ping { 0% { opacity: 0.5; transform: scale(0.55); }
+                      65% { opacity: 0; transform: scale(1.9); }
+                      100% { opacity: 0; transform: scale(1.9); } }
+    /* one bright dash (pattern 200 > 2x pathLength 100, so it never wraps)
+       travels the polyline, then rests hidden for the remainder of the cycle */
+    @keyframes shimmer { 0% { stroke-dashoffset: 12; opacity: 0; }
+                         6% { opacity: 0.7; }
+                         30% { opacity: 0.7; }
+                         40% { stroke-dashoffset: -100; opacity: 0; }
+                         100% { stroke-dashoffset: -100; opacity: 0; } }
+
+    /* ---- static, complete icon for reduced motion ---- */
+    @media (prefers-reduced-motion: reduce) {
+      .breathe-bg, .closedrift, .spin, .core, .halo, .ping, .shimmer { animation: none; }
+      .ping, .shimmer { opacity: 0; }
+      .halo { opacity: 0.45; }
+    }
+  </style>
+
+  <!-- graphite tile -->
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#0B0E11"/>
+  <rect class="breathe-bg" x="8" y="8" width="496" height="496" rx="112" fill="url(#bgGlow)"/>
+  <rect x="12" y="12" width="488" height="488" rx="108" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="4"/>
+
+  <!-- the closing line: dotted amber judge's line, slowly drifting -->
+  <line class="closedrift" x1="72" y1="300" x2="440" y2="300" stroke="#FFB300" stroke-width="16" stroke-linecap="round" stroke-dasharray="2 56" opacity="0.9"/>
+
+  <!-- the bet's price path, breaking up through the close -->
+  <polyline points="92,404 204,338 264,364 384,208" fill="none" stroke="url(#pathGrad)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- light shimmer traveling the path as it crosses the close (hidden at rest) -->
+  <polyline class="shimmer" points="92,404 204,338 264,364 384,208" pathLength="100" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- scout reticle locked on the verdict, above the close -->
+  <g stroke="#00D084" stroke-width="14" stroke-linecap="round" fill="none" filter="url(#glow)">
+    <circle cx="384" cy="208" r="62"/>
+    <line x1="384" y1="134" x2="384" y2="158"/>
+    <line x1="384" y1="258" x2="384" y2="282"/>
+    <line x1="310" y1="208" x2="334" y2="208"/>
+    <line x1="434" y1="208" x2="458" y2="208"/>
+  </g>
+  <!-- inner lock-on ring: dashed, slow spin (ticks above stay fixed, like the hero) -->
+  <g class="spin">
+    <circle cx="384" cy="208" r="44" fill="none" stroke="#00D084" stroke-width="9" stroke-dasharray="26 20.08" stroke-linecap="round" opacity="0.55"/>
+  </g>
+  <!-- expanding lock-on ping (invisible at rest) -->
+  <circle class="ping" cx="384" cy="208" r="30" fill="none" stroke="#00D084" stroke-width="6"/>
+  <!-- verdict core: soft halo breathes, dot pulses -->
+  <circle class="halo" cx="384" cy="208" r="36" fill="url(#coreGlow)"/>
+  <circle class="core" cx="384" cy="208" r="20" fill="#00D084"/>
+</svg>

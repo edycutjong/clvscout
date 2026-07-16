@@ -1,0 +1,39 @@
+# EdgeLedger seed ledger — FIFA World Cup 2026 knockout record.
+#
+# ⚠️ PLACEHOLDER DATA (is_placeholder=true on every row). These are plausible,
+# internally-consistent picks used to exercise the CLV engine and render the
+# ledger. entry_odds/closing_odds/results are illustrative, NOT a claim of a
+# real settled wagering record, and receipt_tx values are synthesized
+# deterministically (never on-chain). Once the ops wallet is funded and real
+# x402 paid calls land, real rows (is_placeholder=false) carry true Blockscout
+# tx hashes. See STATUS.md.
+#
+# Note the CLV design intent: some WINS carry NEGATIVE CLV (won despite a bad
+# number) and some LOSSES carry POSITIVE CLV (beat the close, lost to variance).
+# That divergence is the entire point of tracking CLV over win/loss.
+#
+# Columns: id,stage,fixture,side,side_label,model_prob,entry_odds,closing_odds,result,kickoff_utc,receipt_offset_hours,sold_count
+p001,GRP,BRA vs SRB,HOME,Brazil ML,0.72,1.55,1.46,win,2026-06-14T19:00:00Z,40,7
+p002,GRP,ARG vs KSA,HOME,Argentina ML,0.78,1.42,1.33,win,2026-06-15T19:00:00Z,46,5
+p003,GRP,FRA vs AUS,HOME,France ML,0.58,2.05,1.88,win,2026-06-16T16:00:00Z,30,6
+p004,GRP,ENG vs USA,HOME,England ML,0.55,1.95,2.05,win,2026-06-17T19:00:00Z,22,8
+p005,GRP,GER vs JPN,HOME,Germany ML,0.64,1.75,1.80,loss,2026-06-18T16:00:00Z,28,4
+p006,GRP,ESP vs CRO,HOME,Spain ML,0.56,2.00,1.85,win,2026-06-19T19:00:00Z,33,6
+p007,GRP,POR vs GHA,HOME,Portugal ML,0.68,1.62,1.54,loss,2026-06-20T16:00:00Z,20,3
+p008,GRP,NED vs ECU,HOME,Netherlands ML,0.58,1.85,1.78,loss,2026-06-21T19:00:00Z,18,5
+p009,GRP,BEL vs MAR,HOME,Belgium ML,0.57,1.90,2.15,loss,2026-06-22T16:00:00Z,26,4
+p010,GRP,CRO vs CAN,HOME,Croatia ML,0.52,2.30,2.45,win,2026-06-23T19:00:00Z,24,3
+p011,R16,FRA vs POL,HOME,France to advance,0.70,1.58,1.46,win,2026-06-29T19:00:00Z,44,9
+p012,R16,ARG vs AUS,HOME,Argentina to advance,0.74,1.48,1.40,loss,2026-06-30T19:00:00Z,46,8
+p013,R16,ENG vs SEN,HOME,England to advance,0.66,1.68,1.55,win,2026-07-01T16:00:00Z,30,7
+p014,R16,ESP vs MAR,HOME,Spain to advance,0.60,1.82,1.72,loss,2026-07-02T19:00:00Z,20,6
+p015,R16,BRA vs KOR,HOME,Brazil to advance,0.72,1.45,1.50,loss,2026-07-03T16:00:00Z,40,5
+p016,R16,GER vs DEN,HOME,Germany to advance,0.68,1.60,1.55,win,2026-07-03T19:00:00Z,28,6
+p017,R16,NED vs URU,HOME,Netherlands to advance,0.58,1.88,1.92,win,2026-07-01T19:00:00Z,22,4
+p018,R16,POR vs SUI,HOME,Portugal to advance,0.64,1.72,1.60,win,2026-06-30T16:00:00Z,34,5
+p019,QF,FRA vs BRA,HOME,France to advance,0.58,2.15,1.92,win,2026-07-09T19:00:00Z,46,12
+p020,QF,ENG vs SUI,HOME,England to advance,0.63,1.85,1.72,win,2026-07-10T19:00:00Z,30,11
+p021,QF,ARG vs CRO,HOME,Argentina to advance,0.68,1.65,1.54,win,2026-07-11T19:00:00Z,44,10
+p022,QF,POR vs NED,HOME,Portugal to advance,0.52,2.20,2.30,loss,2026-07-12T16:00:00Z,26,7
+p023,QF,GER vs COL,HOME,Germany to advance,0.56,1.95,2.08,loss,2026-07-12T19:00:00Z,20,8
+p024,QF,ESP vs BEL,HOME,Spain to advance,0.54,2.08,1.95,win,2026-07-10T16:00:00Z,33,9

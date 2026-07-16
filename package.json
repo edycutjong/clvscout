@@ -1,0 +1,70 @@
+{
+  "name": "clvscout",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CLV Scout \u2014 grade a bet against the closing line. Pay-per-grade ($0.01) + pay-per-audit ($0.20) A2MCP on OKX x402 (X Layer). Self-contained sibling of EdgeLedger.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "tsx api/main.ts",
+    "api": "tsx api/main.ts",
+    "dev": "tsx watch api/main.ts",
+    "settle": "tsx scripts/settle.ts",
+    "buyer": "tsx scripts/buyer.ts",
+    "audit": "tsx scripts/audit.ts",
+    "audit:all": "tsx scripts/audit.ts --all",
+    "readiness": "tsx scripts/check_submission_readiness.ts",
+    "gen-line-history": "tsx scripts/gen-line-history.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage --silent",
+    "ci": "npm run lint && npm run typecheck && npm run test:coverage"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "tsx": "^4.19.2",
+    "viem": "^2.21.54",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT",
+  "author": "Edy Cu (@edycutjong)",
+  "homepage": "https://clvscout.edycu.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edycutjong/clvscout.git"
+  },
+  "bugs": {
+    "url": "https://github.com/edycutjong/clvscout/issues"
+  },
+  "keywords": [
+    "okx",
+    "x402",
+    "a2mcp",
+    "x-layer",
+    "onchain",
+    "clv",
+    "closing-line-value",
+    "sports-betting",
+    "ai-agents",
+    "typescript",
+    "express",
+    "micropayments"
+  ]
+}

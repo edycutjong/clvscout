@@ -1,0 +1,22 @@
+node_modules/
+*.log
+
+# runtime artifacts written by api/rails/okx.ts + api/buyerlens.ts at request
+# time — NOT seed data. fixtures/picks.csv, fixtures/line-history.json, and
+# fixtures/ledger-settled.json (the `npm run settle` cache) ARE checked in.
+fixtures/buyers.json
+fixtures/receipts.json
+fixtures/used-nonces.json
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Coverage
+coverage/
+*.lcov
+
+# Editor / OS
+.DS_Store
+*.swp

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CLV Scout mark — a price path beating the closing line, sighted in a scout reticle">
+  <!-- CLV Scout icon, STATIC favicon build. Fully standalone: brand hex values
+       inlined from _tokens.css (graphite #0B0E11, verdict green #00D084,
+       grade amber #FFB300). This is the rest/base frame of icon-animated.svg
+       with all animation removed; transient-only layers (shimmer, lock-on ping)
+       are omitted because they are invisible at rest. -->
+  <defs>
+    <linearGradient id="pathGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D084" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#00D084"/>
+      <stop offset="100%" stop-color="#FFB300"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="70%" cy="26%" r="85%">
+      <stop offset="0%" stop-color="#00D084" stop-opacity="0.20"/>
+      <stop offset="55%" stop-color="#00D084" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#00D084" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00D084" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#00D084" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- graphite tile -->
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#0B0E11"/>
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="url(#bgGlow)"/>
+  <rect x="12" y="12" width="488" height="488" rx="108" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="4"/>
+
+  <!-- the closing line: dotted amber judge's line -->
+  <line x1="72" y1="300" x2="440" y2="300" stroke="#FFB300" stroke-width="16" stroke-linecap="round" stroke-dasharray="2 56" opacity="0.9"/>
+
+  <!-- the bet's price path, breaking up through the close -->
+  <polyline points="92,404 204,338 264,364 384,208" fill="none" stroke="url(#pathGrad)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- scout reticle locked on the verdict, above the close -->
+  <g stroke="#00D084" stroke-width="14" stroke-linecap="round" fill="none" filter="url(#glow)">
+    <circle cx="384" cy="208" r="62"/>
+    <line x1="384" y1="134" x2="384" y2="158"/>
+    <line x1="384" y1="258" x2="384" y2="282"/>
+    <line x1="310" y1="208" x2="334" y2="208"/>
+    <line x1="434" y1="208" x2="458" y2="208"/>
+  </g>
+  <!-- inner lock-on ring: dashed -->
+  <circle cx="384" cy="208" r="44" fill="none" stroke="#00D084" stroke-width="9" stroke-dasharray="26 20.08" stroke-linecap="round" opacity="0.55"/>
+  <!-- verdict core: soft halo + dot -->
+  <circle cx="384" cy="208" r="36" fill="url(#coreGlow)" opacity="0.45"/>
+  <circle cx="384" cy="208" r="20" fill="#00D084"/>
+</svg>

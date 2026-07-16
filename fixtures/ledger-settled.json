@@ -1,0 +1,337 @@
+{
+  "rows": [
+    {
+      "id": "p001",
+      "stage": "GRP",
+      "fixture": "BRA vs SRB",
+      "side_label": "Brazil ML",
+      "entry_odds": 1.55,
+      "closing_odds": 1.46,
+      "result": "win",
+      "kickoff_utc": "2026-06-14T19:00:00Z",
+      "clv_pct": 6.164383561643838,
+      "grade": "A"
+    },
+    {
+      "id": "p002",
+      "stage": "GRP",
+      "fixture": "ARG vs KSA",
+      "side_label": "Argentina ML",
+      "entry_odds": 1.42,
+      "closing_odds": 1.33,
+      "result": "win",
+      "kickoff_utc": "2026-06-15T19:00:00Z",
+      "clv_pct": 6.766917293233066,
+      "grade": "A"
+    },
+    {
+      "id": "p003",
+      "stage": "GRP",
+      "fixture": "FRA vs AUS",
+      "side_label": "France ML",
+      "entry_odds": 2.05,
+      "closing_odds": 1.88,
+      "result": "win",
+      "kickoff_utc": "2026-06-16T16:00:00Z",
+      "clv_pct": 9.042553191489366,
+      "grade": "A+"
+    },
+    {
+      "id": "p004",
+      "stage": "GRP",
+      "fixture": "ENG vs USA",
+      "side_label": "England ML",
+      "entry_odds": 1.95,
+      "closing_odds": 2.05,
+      "result": "win",
+      "kickoff_utc": "2026-06-17T19:00:00Z",
+      "clv_pct": -4.8780487804877986,
+      "grade": "D"
+    },
+    {
+      "id": "p005",
+      "stage": "GRP",
+      "fixture": "GER vs JPN",
+      "side_label": "Germany ML",
+      "entry_odds": 1.75,
+      "closing_odds": 1.8,
+      "result": "loss",
+      "kickoff_utc": "2026-06-18T16:00:00Z",
+      "clv_pct": -2.777777777777779,
+      "grade": "C"
+    },
+    {
+      "id": "p006",
+      "stage": "GRP",
+      "fixture": "ESP vs CRO",
+      "side_label": "Spain ML",
+      "entry_odds": 2,
+      "closing_odds": 1.85,
+      "result": "win",
+      "kickoff_utc": "2026-06-19T19:00:00Z",
+      "clv_pct": 8.108108108108091,
+      "grade": "A+"
+    },
+    {
+      "id": "p007",
+      "stage": "GRP",
+      "fixture": "POR vs GHA",
+      "side_label": "Portugal ML",
+      "entry_odds": 1.62,
+      "closing_odds": 1.54,
+      "result": "loss",
+      "kickoff_utc": "2026-06-20T16:00:00Z",
+      "clv_pct": 5.1948051948051965,
+      "grade": "A"
+    },
+    {
+      "id": "p008",
+      "stage": "GRP",
+      "fixture": "NED vs ECU",
+      "side_label": "Netherlands ML",
+      "entry_odds": 1.85,
+      "closing_odds": 1.78,
+      "result": "loss",
+      "kickoff_utc": "2026-06-21T19:00:00Z",
+      "clv_pct": 3.93258426966292,
+      "grade": "B"
+    },
+    {
+      "id": "p009",
+      "stage": "GRP",
+      "fixture": "BEL vs MAR",
+      "side_label": "Belgium ML",
+      "entry_odds": 1.9,
+      "closing_odds": 2.15,
+      "result": "loss",
+      "kickoff_utc": "2026-06-22T16:00:00Z",
+      "clv_pct": -11.627906976744185,
+      "grade": "F"
+    },
+    {
+      "id": "p010",
+      "stage": "GRP",
+      "fixture": "CRO vs CAN",
+      "side_label": "Croatia ML",
+      "entry_odds": 2.3,
+      "closing_odds": 2.45,
+      "result": "win",
+      "kickoff_utc": "2026-06-23T19:00:00Z",
+      "clv_pct": -6.122448979591855,
+      "grade": "D"
+    },
+    {
+      "id": "p011",
+      "stage": "R16",
+      "fixture": "FRA vs POL",
+      "side_label": "France to advance",
+      "entry_odds": 1.58,
+      "closing_odds": 1.46,
+      "result": "win",
+      "kickoff_utc": "2026-06-29T19:00:00Z",
+      "clv_pct": 8.219178082191792,
+      "grade": "A+"
+    },
+    {
+      "id": "p012",
+      "stage": "R16",
+      "fixture": "ARG vs AUS",
+      "side_label": "Argentina to advance",
+      "entry_odds": 1.48,
+      "closing_odds": 1.4,
+      "result": "loss",
+      "kickoff_utc": "2026-06-30T19:00:00Z",
+      "clv_pct": 5.714285714285716,
+      "grade": "A"
+    },
+    {
+      "id": "p013",
+      "stage": "R16",
+      "fixture": "ENG vs SEN",
+      "side_label": "England to advance",
+      "entry_odds": 1.68,
+      "closing_odds": 1.55,
+      "result": "win",
+      "kickoff_utc": "2026-07-01T16:00:00Z",
+      "clv_pct": 8.387096774193537,
+      "grade": "A+"
+    },
+    {
+      "id": "p014",
+      "stage": "R16",
+      "fixture": "ESP vs MAR",
+      "side_label": "Spain to advance",
+      "entry_odds": 1.82,
+      "closing_odds": 1.72,
+      "result": "loss",
+      "kickoff_utc": "2026-07-02T19:00:00Z",
+      "clv_pct": 5.813953488372103,
+      "grade": "A"
+    },
+    {
+      "id": "p015",
+      "stage": "R16",
+      "fixture": "BRA vs KOR",
+      "side_label": "Brazil to advance",
+      "entry_odds": 1.45,
+      "closing_odds": 1.5,
+      "result": "loss",
+      "kickoff_utc": "2026-07-03T16:00:00Z",
+      "clv_pct": -3.3333333333333326,
+      "grade": "C"
+    },
+    {
+      "id": "p016",
+      "stage": "R16",
+      "fixture": "GER vs DEN",
+      "side_label": "Germany to advance",
+      "entry_odds": 1.6,
+      "closing_odds": 1.55,
+      "result": "win",
+      "kickoff_utc": "2026-07-03T19:00:00Z",
+      "clv_pct": 3.2258064516129004,
+      "grade": "B"
+    },
+    {
+      "id": "p017",
+      "stage": "R16",
+      "fixture": "NED vs URU",
+      "side_label": "Netherlands to advance",
+      "entry_odds": 1.88,
+      "closing_odds": 1.92,
+      "result": "win",
+      "kickoff_utc": "2026-07-01T19:00:00Z",
+      "clv_pct": -2.083333333333337,
+      "grade": "C"
+    },
+    {
+      "id": "p018",
+      "stage": "R16",
+      "fixture": "POR vs SUI",
+      "side_label": "Portugal to advance",
+      "entry_odds": 1.72,
+      "closing_odds": 1.6,
+      "result": "win",
+      "kickoff_utc": "2026-06-30T16:00:00Z",
+      "clv_pct": 7.499999999999996,
+      "grade": "A"
+    },
+    {
+      "id": "p019",
+      "stage": "QF",
+      "fixture": "FRA vs BRA",
+      "side_label": "France to advance",
+      "entry_odds": 2.15,
+      "closing_odds": 1.92,
+      "result": "win",
+      "kickoff_utc": "2026-07-09T19:00:00Z",
+      "clv_pct": 11.979166666666675,
+      "grade": "A+"
+    },
+    {
+      "id": "p020",
+      "stage": "QF",
+      "fixture": "ENG vs SUI",
+      "side_label": "England to advance",
+      "entry_odds": 1.85,
+      "closing_odds": 1.72,
+      "result": "win",
+      "kickoff_utc": "2026-07-10T19:00:00Z",
+      "clv_pct": 7.558139534883734,
+      "grade": "A"
+    },
+    {
+      "id": "p021",
+      "stage": "QF",
+      "fixture": "ARG vs CRO",
+      "side_label": "Argentina to advance",
+      "entry_odds": 1.65,
+      "closing_odds": 1.54,
+      "result": "win",
+      "kickoff_utc": "2026-07-11T19:00:00Z",
+      "clv_pct": 7.14285714285714,
+      "grade": "A"
+    },
+    {
+      "id": "p022",
+      "stage": "QF",
+      "fixture": "POR vs NED",
+      "side_label": "Portugal to advance",
+      "entry_odds": 2.2,
+      "closing_odds": 2.3,
+      "result": "loss",
+      "kickoff_utc": "2026-07-12T16:00:00Z",
+      "clv_pct": -4.347826086956507,
+      "grade": "D"
+    },
+    {
+      "id": "p023",
+      "stage": "QF",
+      "fixture": "GER vs COL",
+      "side_label": "Germany to advance",
+      "entry_odds": 1.95,
+      "closing_odds": 2.08,
+      "result": "loss",
+      "kickoff_utc": "2026-07-12T19:00:00Z",
+      "clv_pct": -6.25,
+      "grade": "D"
+    },
+    {
+      "id": "p024",
+      "stage": "QF",
+      "fixture": "ESP vs BEL",
+      "side_label": "Spain to advance",
+      "entry_odds": 2.08,
+      "closing_odds": 1.95,
+      "result": "win",
+      "kickoff_utc": "2026-07-10T16:00:00Z",
+      "clv_pct": 6.666666666666665,
+      "grade": "A"
+    }
+  ],
+  "truthTable": {
+    "A+": {
+      "grade": "A+",
+      "n": 5,
+      "win_rate": 1,
+      "roi_pct": 89.19999999999997,
+      "low_sample": true
+    },
+    "A": {
+      "grade": "A",
+      "n": 9,
+      "win_rate": 0.6666666666666666,
+      "roi_pct": 14.111111111111107,
+      "low_sample": true
+    },
+    "B": {
+      "grade": "B",
+      "n": 2,
+      "win_rate": 0.5,
+      "roi_pct": -19.999999999999996,
+      "low_sample": true
+    },
+    "C": {
+      "grade": "C",
+      "n": 3,
+      "win_rate": 0.3333333333333333,
+      "roi_pct": -37.333333333333336,
+      "low_sample": true
+    },
+    "D": {
+      "grade": "D",
+      "n": 4,
+      "win_rate": 0.5,
+      "roi_pct": 6.25,
+      "low_sample": true
+    },
+    "F": {
+      "grade": "F",
+      "n": 1,
+      "win_rate": 0,
+      "roi_pct": -100,
+      "low_sample": true
+    }
+  },
+  "settledAt": "2026-07-15T05:11:08.650Z"
+}
