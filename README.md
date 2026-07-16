@@ -1,6 +1,6 @@
 <div align="center">
   <img src="docs/icon-animated.svg" alt="CLV Scout Icon" width="144" height="144" />
-  <h1>CLV Scout 🎯</h1>
+  <h1>CLV Scout 📈</h1>
   <p><em>You can win the bet and still be wrong — grade every pick against the closing line, not the scoreboard.</em></p>
   <img src="docs/readme-hero-animated.svg" alt="CLV Scout" width="100%">
 
