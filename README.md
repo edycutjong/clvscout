@@ -9,12 +9,12 @@
   [![API](https://img.shields.io/badge/API-live-2ea043?style=for-the-badge&logo=railway&logoColor=white)](https://api.clvscout.edycu.dev/health)
   [![Landing](https://img.shields.io/badge/Landing-live-2ea043?style=for-the-badge&logo=github&logoColor=white)](https://clvscout.edycu.dev/)
   [![Pitch Deck](https://img.shields.io/badge/Pitch_Deck-live-FF007A?style=for-the-badge)](https://clvscout.edycu.dev/pitch)
-  [![YouTube Demo](https://img.shields.io/badge/YouTube_Demo-coming_soon-9e9e9e?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/placeholder)
-  [![HackQuest](https://img.shields.io/badge/HackQuest-listing_pending-9e9e9e?style=for-the-badge)](https://www.hackquest.io/hackathons/OKXAI-Genesis-Hackathon)
+  [![YouTube Demo](https://img.shields.io/badge/YouTube_Demo-watch-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/UVVmLJeI4Tw)
+  [![HackQuest](https://img.shields.io/badge/HackQuest-view_project-6C5CE7?style=for-the-badge)](https://www.hackquest.io/projects/CLV-Scout)
 
   <br/>
 
-  ![Node.js 20](https://img.shields.io/badge/Node.js_20-339933?logo=node.js&logoColor=white)
+  ![Node.js 20 | 22 | 24](https://img.shields.io/badge/Node.js-20_%7C_22_%7C_24-339933?logo=node.js&logoColor=white)
   ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
   ![Express](https://img.shields.io/badge/Express_4-000000?logo=express&logoColor=white)
   ![Vitest](https://img.shields.io/badge/Vitest-124_tests-6E9F18?logo=vitest&logoColor=white)

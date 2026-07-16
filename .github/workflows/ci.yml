@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         # Full matrix on main push, single node on PRs (saves CI minutes)
-        node-version: ${{ github.event_name == 'push' && fromJSON('[20, 22]') || fromJSON('[20]') }}
+        node-version: ${{ github.event_name == 'push' && fromJSON('[20, 22, 24]') || fromJSON('[20]') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -169,7 +169,7 @@ jobs:
           echo "All CI/CD gates passed!"
           echo ""
           echo "Pipeline Summary:"
-          echo "  - Stage 1 - Quality (typecheck, vitest, coverage; Node 20/22)"
+          echo "  - Stage 1 - Quality (typecheck, vitest, coverage; Node 20/22/24)"
           echo "  - Stage 2 - Secret Scanning (TruffleHog)"
           echo "  - Stage 2 - Dependency Audit (npm audit + license-checker)"
           echo "  - Stage 3 - Build Verification (tsc)"
