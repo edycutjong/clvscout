@@ -6,6 +6,7 @@
 
   <br/>
 
+  [![API](https://img.shields.io/badge/API-live-2ea043?style=for-the-badge&logo=railway&logoColor=white)](https://api.clvscout.edycu.dev/health)
   [![Landing](https://img.shields.io/badge/Landing-deploy_pending-9e9e9e?style=for-the-badge&logo=github&logoColor=white)](https://clvscout.edycu.dev/)
   [![Pitch Deck](https://img.shields.io/badge/Pitch_Deck-coming_soon-9e9e9e?style=for-the-badge)](https://clvscout.edycu.dev/pitch)
   [![YouTube Demo](https://img.shields.io/badge/YouTube_Demo-coming_soon-9e9e9e?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/placeholder)
@@ -13,12 +14,12 @@
 
   <br/>
 
-  ![Node.js 20](https://img.shields.io/badge/Node.js_20-339933?style=for-the-badge&logo=node.js&logoColor=white)
-  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-  ![Express](https://img.shields.io/badge/Express_4-000000?style=for-the-badge&logo=express&logoColor=white)
-  ![Vitest](https://img.shields.io/badge/Vitest-124_tests-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
-  ![OKX x402](https://img.shields.io/badge/OKX-x402-000000?style=for-the-badge&logo=okx&logoColor=white)
-  ![X Layer](https://img.shields.io/badge/X_Layer-eip155%3A196-purple?style=for-the-badge)
+  ![Node.js 20](https://img.shields.io/badge/Node.js_20-339933?logo=node.js&logoColor=white)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+  ![Express](https://img.shields.io/badge/Express_4-000000?logo=express&logoColor=white)
+  ![Vitest](https://img.shields.io/badge/Vitest-124_tests-6E9F18?logo=vitest&logoColor=white)
+  ![OKX x402](https://img.shields.io/badge/OKX-x402-000000?logo=okx&logoColor=white)
+  ![X Layer](https://img.shields.io/badge/X_Layer-eip155%3A196-purple)
   [![CI](https://github.com/edycutjong/clvscout/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/clvscout/actions/workflows/ci.yml)
 
 </div>
@@ -271,11 +272,11 @@ clvscout/
   round-number CLV cutoffs decided up front — they are not tuned to make this
   particular 24-row seed ledger look good, and `/api/calibration` states that
   explicitly alongside the live truth table.
-- **Not deployed.** This harness targets `https://api.clvscout.edycu.dev`
-  (landing/pitch on `clvscout.edycu.dev` via Pages), but as of this snapshot the service runs locally
-  only (`npm run api`) — no live URL, no on-chain settlement receipt yet.
-  Treat every number in this README as reproducible from source, not as a
-  claim of a hosted, judged deployment.
+- **Live API — but no real on-chain settlement yet.** The service is deployed on Railway at
+  **`https://api.clvscout.edycu.dev`** (`/health` 200; paid routes return real `402` challenges,
+  free routes 200). What's **not** done: no real paid call has settled on-chain yet (no receipt),
+  and the static landing/pitch on `clvscout.edycu.dev` (Pages) is still pending DNS — it's live at
+  `edycutjong.github.io/clvscout` meanwhile. Every number here remains reproducible from source.
 - **Narrow market coverage by design.** World Cup 2026 knockout markets only
   (`fixtures/picks.csv`); coverage is stated in every `/api/calibration`
   response rather than hidden.
