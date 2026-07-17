@@ -92,6 +92,9 @@ export interface PaymentRequirements {
   amount: string; // atomic units, decimal string
   payTo: string;
   maxTimeoutSeconds: number;
+  /** Token decimals — top-level so a token-registry that can't resolve the asset
+   * can still compute the human amount (OKX x402-check falls back to this). */
+  decimals: number;
   extra: Record<string, unknown>;
 }
 
@@ -160,7 +163,10 @@ export function buildPaymentRequirements(route: RouteConfig, _resourceUrl: strin
     amount: priceToAtomicUnits(route.priceUsd),
     payTo: PAYTO_ADDRESS,
     maxTimeoutSeconds: 120,
-    extra: { name: ASSET_NAME, version: ASSET_VERSION },
+    decimals: ASSET_DECIMALS,
+    // Mirror decimals into `extra` too — the OKX x402-core convention is
+    // `PaymentRequirements.extra.decimals`; USD₮0 is not in OKX's token registry.
+    extra: { name: ASSET_NAME, version: ASSET_VERSION, decimals: ASSET_DECIMALS },
   };
 }
 
