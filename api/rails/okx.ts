@@ -481,9 +481,15 @@ export function okxPayGate(): RequestHandler {
     const challenge = buildChallenge(routeKey, resourceUrl);
     const required = challenge.accepts[0];
 
+    // x402 v2 wire rule: the PAYMENT-REQUIRED response header MUST be the base64
+    // encoding of the challenge JSON (NOT a boolean flag) so the caller can
+    // recover the payment requirements from the header alone. Set it on EVERY
+    // 402 (unpaid, malformed, invalid) — OKX.AI's validator decodes this header.
+    const challengeHeader = Buffer.from(JSON.stringify(challenge)).toString("base64");
+
     const header = req.header("X-PAYMENT");
     if (!header) {
-      res.status(402).set("PAYMENT-REQUIRED", "true").json(challenge);
+      res.status(402).set("PAYMENT-REQUIRED", challengeHeader).json(challenge);
       return;
     }
 
@@ -491,13 +497,13 @@ export function okxPayGate(): RequestHandler {
     try {
       payload = decodePaymentHeader(header);
     } catch {
-      res.status(402).json({ ...challenge, error: "malformed_payment_header" });
+      res.status(402).set("PAYMENT-REQUIRED", challengeHeader).json({ ...challenge, error: "malformed_payment_header" });
       return;
     }
 
     const verified = await verifyPayment(payload, required);
     if (!verified.isValid) {
-      res.status(402).json({ ...challenge, error: verified.invalidReason, invalidMessage: verified.invalidMessage });
+      res.status(402).set("PAYMENT-REQUIRED", challengeHeader).json({ ...challenge, error: verified.invalidReason, invalidMessage: verified.invalidMessage });
       return;
     }
 
