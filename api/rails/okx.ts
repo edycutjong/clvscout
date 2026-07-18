@@ -510,7 +510,9 @@ export function okxPayGate(): RequestHandler {
     // 402 (unpaid, malformed, invalid) — OKX.AI's validator decodes this header.
     const challengeHeader = Buffer.from(JSON.stringify(challenge)).toString("base64");
 
-    const header = req.header("X-PAYMENT");
+    // v2 clients (OKX SDK / onchainos) send the payment in PAYMENT-SIGNATURE;
+    // X-PAYMENT kept for v1-style clients. Same base64 PaymentPayload either way.
+    const header = req.header("PAYMENT-SIGNATURE") ?? req.header("X-PAYMENT");
     if (!header) {
       res.status(402).set("PAYMENT-REQUIRED", challengeHeader).json(challenge);
       return;

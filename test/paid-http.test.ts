@@ -118,6 +118,17 @@ describe("paid POST /api/grade", () => {
     expect(body.you.your_grades).toBeGreaterThanOrEqual(1);
   });
 
+  it("accepts the v2 PAYMENT-SIGNATURE header (what OKX SDK / onchainos clients send)", async () => {
+    const header = await signPaymentHeader("/api/grade");
+    const res = await fetch(`${BASE}/api/grade`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "PAYMENT-SIGNATURE": header },
+      body: JSON.stringify({ match: "BRA vs SRB", selection: "Brazil ML", odds_taken: 1.55 }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("PAYMENT-RESPONSE")).toBeTruthy();
+  });
+
   it("returns UNGRADED (still 200) for a market with no recorded close", async () => {
     const res = await paidPost("/api/grade", { match: "Nobody vs Noone", selection: "Nobody ML", odds_taken: 2.0 });
     expect(res.status).toBe(200);
