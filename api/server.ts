@@ -6,8 +6,8 @@
  *   POST /api/calibration       free
  *   POST /api/me                free
  *   POST /api/receipts/verify   free
- *   GET  /api/grade             405
- *   GET  /api/audit             405
+ *   GET  /api/grade             same x402 gate (OKX's review probe is a GET; params ride the query string)
+ *   GET  /api/audit             same x402 gate
  *   GET  /health
  */
 import express from "express";
@@ -22,7 +22,6 @@ import {
   meHandler,
   receiptsVerifyHandler,
   demoRunHandler,
-  methodNotAllowedHandler,
   healthHandler,
 } from "./routes";
 import { PAY_RAIL } from "../config";
@@ -42,6 +41,10 @@ function cors(req: Request, res: Response, next: NextFunction): void {
 export function createApp(): express.Express {
   const app = express();
   app.disable("x-powered-by");
+  // Behind Railway's proxy req.protocol is "http" without this, which would
+  // leak an http:// resource.url into the 402 challenge — OKX's validator
+  // compares it against the registered https endpoint.
+  app.set("trust proxy", true);
   app.use(cors);
   app.use(express.json());
 
@@ -49,11 +52,21 @@ export function createApp(): express.Express {
     app.use(okxPayGate());
   }
 
+  // Paid GET support: OKX's x402 client sends business params in the query
+  // string when the paid call is a GET. Unpaid GETs never reach these handlers
+  // (okxPayGate answers them with the 402 challenge, same as POST — its review
+  // probe is a GET, and a 405 there reads as "endpoint unreachable").
+  const queryAsBody = (handler: (req: Request, res: Response) => Promise<void>) =>
+    (req: Request, res: Response): Promise<void> => {
+      req.body = { ...req.query };
+      return handler(req, res);
+    };
+
   app.post("/api/grade", gradeHandler);
-  app.get("/api/grade", methodNotAllowedHandler);
+  app.get("/api/grade", queryAsBody(gradeHandler));
 
   app.post("/api/audit", auditHandler);
-  app.get("/api/audit", methodNotAllowedHandler);
+  app.get("/api/audit", queryAsBody(auditHandler));
 
   app.post("/api/calibration", calibrationHandler);
   app.post("/api/me", meHandler);

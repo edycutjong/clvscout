@@ -166,7 +166,8 @@ export function buildPaymentRequirements(route: RouteConfig, _resourceUrl: strin
     decimals: ASSET_DECIMALS,
     // Mirror decimals into `extra` too — the OKX x402-core convention is
     // `PaymentRequirements.extra.decimals`; USD₮0 is not in OKX's token registry.
-    extra: { name: ASSET_NAME, version: ASSET_VERSION, decimals: ASSET_DECIMALS },
+    // `assetTransferMethod` matches the real SDK's challenge shape (eip3009).
+    extra: { assetTransferMethod: "eip3009", name: ASSET_NAME, version: ASSET_VERSION, decimals: ASSET_DECIMALS },
   };
 }
 
@@ -355,10 +356,13 @@ export async function settlePayment(payload: PaymentPayload, required: PaymentRe
     const path = `${OKX_FACILITATOR_PREFIX}/settle`;
     const body = JSON.stringify({ x402Version: X402_VERSION, paymentPayload: payload, paymentRequirements: required });
     try {
+      // Bounded: a hung facilitator round-trip must never stall the paid call
+      // past OKX.AI's review timeout ("task timed out" rejection reason).
       const res = await fetch(`${OKX_FACILITATOR_BASE}${path}`, {
         method: "POST",
         headers: okxAuthHeaders("POST", path, body),
         body,
+        signal: AbortSignal.timeout(15_000),
       });
       const json = (await res.json()) as { success: boolean; status?: string; transaction?: string };
       return {
@@ -446,6 +450,7 @@ export async function fetchSettleStatus(txHash: string): Promise<{ status: strin
   try {
     const res = await fetch(`${OKX_FACILITATOR_BASE}${path}`, {
       headers: okxAuthHeaders("GET", path, ""),
+      signal: AbortSignal.timeout(15_000),
     });
     const json = (await res.json()) as { status?: string };
     return { status: json.status ?? "unknown", live: true, source: "OKX Facilitator GET /settle/status" };
@@ -476,14 +481,26 @@ declare module "express-serve-static-core" {
  */
 export function okxPayGate(): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const routeKey = `${req.method} ${req.path}`;
-    const route = CLV_PAY_ROUTES[routeKey];
+    // GET must produce the same 402 challenge as POST: OKX.AI's review probe
+    // (and `onchainos payment quote`) default to GET, and a 405 there is
+    // classified as `endpoint_unreachable` — the exact listing-rejection reason.
+    let routeKey = `${req.method} ${req.path}`;
+    let route = CLV_PAY_ROUTES[routeKey];
+    if (!route && req.method === "GET") {
+      routeKey = `POST ${req.path}`;
+      route = CLV_PAY_ROUTES[routeKey];
+    }
     if (!route) {
       next();
       return;
     }
 
-    const resourceUrl = `${req.protocol}://${req.get("host") ?? "localhost"}${req.originalUrl}`;
+    // `trust proxy` makes req.protocol honor X-Forwarded-Proto; the localhost
+    // guard keeps a misconfigured proxy from ever leaking http:// into the
+    // challenge — OKX validates resource.url against the registered https endpoint.
+    const host = req.get("host") ?? "localhost";
+    const proto = req.protocol === "https" || host.startsWith("localhost") || host.startsWith("127.") ? req.protocol : "https";
+    const resourceUrl = `${proto}://${host}${req.originalUrl}`;
     const challenge = buildChallenge(routeKey, resourceUrl);
     const required = challenge.accepts[0];
 
@@ -515,7 +532,11 @@ export function okxPayGate(): RequestHandler {
 
     const receipt = await settlePayment(payload, required);
     req.x402 = { payer: verified.payer, receipt };
-    res.set("X-PAYMENT-RESPONSE", Buffer.from(JSON.stringify(receipt)).toString("base64"));
+    const receiptHeader = Buffer.from(JSON.stringify(receipt)).toString("base64");
+    // PAYMENT-RESPONSE is the v2 header name the OKX SDK emits (and the
+    // marketplace reads); X-PAYMENT-RESPONSE kept for v1-style clients.
+    res.set("PAYMENT-RESPONSE", receiptHeader);
+    res.set("X-PAYMENT-RESPONSE", receiptHeader);
     next();
   };
 }

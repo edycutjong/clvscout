@@ -125,11 +125,12 @@ describe("paid POST /api/grade", () => {
     expect(body.clv_grade).toBe("UNGRADED");
   });
 
-  it("returns 400 for a paid-but-malformed body (payment cleared, schema failed)", async () => {
+  it("returns a 200 usage response for a paid-but-malformed body (agent-runtime friendly)", async () => {
     const res = await paidPost("/api/grade", { nonsense: true });
-    expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("invalid_request");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { service: string; example_request: unknown };
+    expect(body.service).toBe("CLV Grade");
+    expect(body.example_request).toBeTruthy();
   });
 });
 
@@ -148,9 +149,11 @@ describe("paid POST /api/audit", () => {
     expect(typeof body.sharp_score.value).toBe("number");
   });
 
-  it("returns 400 for a paid-but-invalid audit body (empty bets)", async () => {
+  it("returns a 200 usage response for a paid-but-invalid audit body (empty bets)", async () => {
     const res = await paidPost("/api/audit", { bets: [] });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { service: string };
+    expect(body.service).toBe("CLV Audit");
   });
 });
 

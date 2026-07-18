@@ -72,15 +72,19 @@ describe("POST /api/audit — unpaid", () => {
   });
 });
 
-describe("GET on POST-only paid routes -> 405", () => {
-  it("GET /api/grade -> 405", async () => {
+describe("unpaid GET on paid routes -> same 402 challenge as POST (OKX review probes with GET)", () => {
+  it("GET /api/grade -> 402 with PAYMENT-REQUIRED header", async () => {
     const res = await fetch(`${base}/api/grade`, { method: "GET" });
-    expect(res.status).toBe(405);
+    expect(res.status).toBe(402);
+    expect(res.headers.get("PAYMENT-REQUIRED")).toBeTruthy();
+    const body = (await res.json()) as { x402Version: number };
+    expect(body.x402Version).toBe(2);
   });
 
-  it("GET /api/audit -> 405", async () => {
+  it("GET /api/audit -> 402 with PAYMENT-REQUIRED header", async () => {
     const res = await fetch(`${base}/api/audit`, { method: "GET" });
-    expect(res.status).toBe(405);
+    expect(res.status).toBe(402);
+    expect(res.headers.get("PAYMENT-REQUIRED")).toBeTruthy();
   });
 });
 
