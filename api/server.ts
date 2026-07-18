@@ -12,6 +12,7 @@
  */
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { okxPayGate } from "./rails/okx";
@@ -43,10 +44,24 @@ export function createApp(): express.Express {
   app.disable("x-powered-by");
   // Behind Railway's proxy req.protocol is "http" without this, which would
   // leak an http:// resource.url into the 402 challenge — OKX's validator
-  // compares it against the registered https endpoint.
-  app.set("trust proxy", true);
+  // compares it against the registered https endpoint. Hop count 1 (not
+  // `true`) so clients can't spoof their IP past the rate limiter via
+  // X-Forwarded-For.
+  app.set("trust proxy", 1);
   app.use(cors);
   app.use(express.json());
+
+  // Basic per-IP rate limit ahead of the pay gate: signature verification is
+  // CPU work an attacker could spam for free. Generous enough that OKX's
+  // review probes and real buyers never hit it.
+  app.use(
+    rateLimit({
+      windowMs: 60_000,
+      limit: Number(process.env.RATE_LIMIT_MAX ?? 600),
+      standardHeaders: true,
+      legacyHeaders: false,
+    }),
+  );
 
   if (PAY_RAIL === "okx") {
     app.use(okxPayGate());

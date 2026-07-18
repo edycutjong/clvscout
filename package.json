@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "CLV Scout \u2014 grade a bet against the closing line. Pay-per-grade ($0.01) + pay-per-audit ($0.20) A2MCP on OKX x402 (X Layer). Self-contained sibling of EdgeLedger.",
+  "description": "CLV Scout — grade a bet against the closing line. Pay-per-grade ($0.01) + pay-per-audit ($0.20) A2MCP on OKX x402 (X Layer). Self-contained sibling of EdgeLedger.",
   "engines": {
     "node": "20.x"
   },
@@ -28,6 +28,7 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.6.0",
     "tsx": "^4.19.2",
     "viem": "^2.21.54",
     "zod": "^3.24.1"
