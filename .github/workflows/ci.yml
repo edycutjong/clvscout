@@ -142,11 +142,12 @@ jobs:
           echo "status=$STATUS"; cat /tmp/audit.json
           test "$STATUS" = "402"
           grep -q '"x402Version":2' /tmp/audit.json
-      - name: "Self-check — GET /api/grade -> 405"
+      - name: "Self-check — GET /api/grade unpaid -> 402 challenge (OKX review probes with GET)"
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET http://localhost:4021/api/grade)
+          STATUS=$(curl -s -D /tmp/grade-get-headers.txt -o /dev/null -w "%{http_code}" -X GET http://localhost:4021/api/grade)
           echo "status=$STATUS"
-          test "$STATUS" = "405"
+          test "$STATUS" = "402"
+          grep -qi '^payment-required:' /tmp/grade-get-headers.txt
       - name: "Self-check — POST /api/calibration (free) -> 200"
         run: |
           STATUS=$(curl -s -o /tmp/calibration.json -w "%{http_code}" -X POST http://localhost:4021/api/calibration -H "Content-Type: application/json" -d '{}')
@@ -173,4 +174,4 @@ jobs:
           echo "  - Stage 2 - Secret Scanning (TruffleHog)"
           echo "  - Stage 2 - Dependency Audit (npm audit + license-checker)"
           echo "  - Stage 3 - Build Verification (tsc)"
-          echo "  - Stage 4 - API Smoke (402/402/405/200 self-check)"
+          echo "  - Stage 4 - API Smoke (402/402/402+header/200 self-check)"
