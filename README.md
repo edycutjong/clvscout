@@ -290,20 +290,21 @@ clvscout/
 
 ## ⚠️ Limitations / What's Mocked / What's Next
 
-- **Self-contained facilitator, not a mock.** The real `@okxweb3/x402-express` +
-  `x402-core` + `x402-evm` packages install cleanly and match the documented
-  wire shapes — the **server-side** `ExactEvmScheme` lives at the subpath
-  `@okxweb3/x402-evm/exact/server` (the sibling **EdgeLedger** build imports it
-  there and wires it for real). CLV Scout deliberately keeps *this* listing
-  **zero-dependency on `@okxweb3`**: `api/rails/okx.ts` hand-rolls the same
-  documented wire shapes with only `viem` + `express`, so it installs, boots,
-  and unit-tests the payment leg fully offline. **EIP-3009/EIP-712
-  signature verification is real, offline cryptography** (`viem`'s
-  `recoverTypedDataAddress`), exercised end-to-end by `scripts/buyer.ts`
-  against a live server. Without `OKX_API_KEY`/`OKX_SECRET_KEY`/`OKX_PASSPHRASE`
-  set, settlement is recorded as an honestly-labeled **local-pending**
-  receipt instead of a live Facilitator call — the payment signature check
-  still runs for real either way.
+- **Official OKX Payment SDK — the engine, not a mock.** `api/rails/okx.ts`
+  gates the paid routes with the published `@okxweb3/x402-express`
+  `paymentMiddleware`, backed by an `x402ResourceServer` that registers the
+  **server-side** `ExactEvmScheme` from the subpath
+  `@okxweb3/x402-evm/exact/server` and the `OKXFacilitatorClient` from
+  `@okxweb3/x402-core`. This is the SDK path the OKX.AI listing review verifies
+  against — the 402 challenge, `PAYMENT-SIGNATURE`/`X-PAYMENT` decode,
+  exact-scheme EIP-3009 verification, and settlement all run through the SDK.
+  With `OKX_API_KEY`/`OKX_SECRET_KEY`/`OKX_PASSPHRASE` set, settlement is a live
+  `OKXFacilitatorClient` call on X Layer. Without them (local/CI/demo), a drop-in
+  `LocalFacilitatorClient` (`api/rails/localFacilitator.ts`) does **real,
+  offline EIP-3009/EIP-712 signature recovery** (`viem`'s
+  `recoverTypedDataAddress`) but reports settlement honestly as
+  `pending`/`local:` — never a fabricated on-chain receipt. The full round-trip
+  is exercised end-to-end by `scripts/buyer.ts` against a live server.
 - **Real closes only — UNGRADED otherwise.** There is no synthetic-close code
   path anywhere in this codebase. A market without a recorded closing-line
   snapshot returns `clv_grade: "UNGRADED"` with a reason, never an invented

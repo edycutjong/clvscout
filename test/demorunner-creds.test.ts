@@ -25,13 +25,33 @@ beforeAll(async () => {
   vi.stubEnv("OKX_API_KEY", "test-key");
   vi.stubEnv("OKX_SECRET_KEY", "test-secret");
   vi.stubEnv("OKX_PASSPHRASE", "test-pass");
-  // fake ONLY the OKX facilitator settle call; everything else (the demo
-  // runner's localhost probe/replay) goes through the real fetch.
+  // Fake ONLY the official OKX facilitator REST surface the SDK's
+  // OKXFacilitatorClient calls (getSupported / verify / settle); everything
+  // else (the demo runner's localhost probe/replay) uses the real fetch. This
+  // exercises the credentialed path end-to-end with no live creds or network.
   vi.stubGlobal("fetch", (async (url: string | URL | Request, opts?: RequestInit) => {
+    const s = String(url);
     let host = "";
-    try { host = new URL(String(url)).hostname; } catch { /* relative/opaque URL */ }
+    try { host = new URL(s).hostname; } catch { /* relative/opaque URL */ }
     if (host === "web3.okx.com") {
-      return { json: async () => ({ success: true, status: "success", transaction: "0xfeedface" }) } as Response;
+      if (s.includes("/supported")) {
+        return {
+          ok: true,
+          json: async () => ({
+            kinds: [
+              { x402Version: 2, scheme: "exact", network: "eip155:196" },
+              { x402Version: 2, scheme: "exact", network: "eip155:1952" },
+            ],
+            extensions: [],
+            signers: {},
+          }),
+        } as Response;
+      }
+      if (s.includes("/verify")) {
+        return { ok: true, json: async () => ({ isValid: true }) } as Response;
+      }
+      // /settle (and any other x402 endpoint)
+      return { ok: true, json: async () => ({ success: true, status: "success", transaction: "0xfeedface" }) } as Response;
     }
     return realFetch(url as string, opts);
   }) as typeof fetch);

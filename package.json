@@ -26,6 +26,9 @@
     "ci": "npm run lint && npm run typecheck && npm run test:coverage"
   },
   "dependencies": {
+    "@okxweb3/x402-core": "^0.1.0",
+    "@okxweb3/x402-evm": "^0.2.1",
+    "@okxweb3/x402-express": "^0.1.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^8.6.0",

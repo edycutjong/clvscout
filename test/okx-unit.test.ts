@@ -1,172 +1,166 @@
 /**
- * Exhaustive unit coverage of api/rails/okx.ts branches that the HTTP tests
- * don't naturally hit: every verifyPayment rejection reason, buildChallenge's
- * unknown-route throw, and the credentialed settlement / status paths (behind
- * a mocked fetch, since this repo ships no OKX creds).
+ * Exhaustive unit coverage of the OFFICIAL-SDK payment rail (api/rails/okx.ts)
+ * and its local-faithful facilitator (api/rails/localFacilitator.ts) branches
+ * that the HTTP tests don't naturally hit: every LocalFacilitatorClient verify
+ * rejection reason, the honest local settle receipt, facilitator selection, the
+ * credentialed fetchSettleStatus paths (mocked fetch), and warmFacilitator's
+ * boot self-check. All signatures use real viem accounts — no crypto is faked.
  */
 import { describe, it, expect, afterEach, vi } from "vitest";
-import fs from "node:fs";
-import {
-  buildChallenge,
-  buildPaymentRequirements,
-  verifyPayment,
-  okxPayGate,
-  CLV_PAY_ROUTES,
-  type PaymentRequirements,
-  type PaymentPayload,
-} from "../api/rails/okx";
-import { PATHS } from "../config";
-import type { NextFunction, Request, Response } from "express";
+import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
+import { authorizationTypes } from "@okxweb3/x402-evm";
+import { LocalFacilitatorClient } from "../api/rails/localFacilitator";
+import { buildFacilitatorClient, fetchSettleStatus, quoteSummary } from "../api/rails/okx";
+import { X402_NETWORK, USDT0_ADDRESS, PAYTO_ADDRESS, ASSET_NAME, ASSET_VERSION } from "../config";
 
-const GRADE = CLV_PAY_ROUTES["POST /api/grade"];
-function req(): PaymentRequirements {
-  return buildPaymentRequirements(GRADE, "https://x/api/grade");
-}
+const BASE_REQ = {
+  scheme: "exact",
+  network: X402_NETWORK,
+  asset: USDT0_ADDRESS,
+  amount: "10000",
+  payTo: PAYTO_ADDRESS,
+  maxTimeoutSeconds: 300,
+  extra: { assetTransferMethod: "eip3009", name: ASSET_NAME, version: ASSET_VERSION },
+} as const;
 
-const VALID_ADDR = "0x1111111111111111111111111111111111111111";
-const OTHER_ADDR = "0x2222222222222222222222222222222222222222";
+let nonceCounter = 0;
+const rand = () => ("0x" + (nonceCounter++).toString(16).padStart(64, "b")) as `0x${string}`;
 
-function payload(accepted: PaymentRequirements, overrideAuth: Partial<PaymentPayload["payload"]["authorization"]> = {}, signature = "0x00"): PaymentPayload {
-  const nowSec = Math.floor(Date.now() / 1000);
-  return {
-    x402Version: 2,
-    accepted,
-    payload: {
-      signature: signature as `0x${string}`,
-      authorization: {
-        from: VALID_ADDR,
-        to: OTHER_ADDR,
-        value: accepted.amount,
-        validAfter: String(nowSec - 60),
-        validBefore: String(nowSec + 3600),
-        nonce: ("0x" + "ab".repeat(32)),
-        ...overrideAuth,
-      },
-    },
+async function sign(
+  pk: `0x${string}`,
+  opts: { from?: `0x${string}`; to?: `0x${string}`; value?: string; nonce?: `0x${string}`; domain?: { chainId?: number } } = {},
+) {
+  const account = privateKeyToAccount(pk);
+  const now = Math.floor(Date.now() / 1000);
+  const auth = {
+    from: opts.from ?? account.address,
+    to: opts.to ?? (PAYTO_ADDRESS as `0x${string}`),
+    value: opts.value ?? BASE_REQ.amount,
+    validAfter: String(now - 60),
+    validBefore: String(now + 120),
+    nonce: opts.nonce ?? rand(),
   };
+  const signature = await account.signTypedData({
+    domain: {
+      name: ASSET_NAME,
+      version: ASSET_VERSION,
+      chainId: opts.domain?.chainId ?? Number(X402_NETWORK.split(":")[1]),
+      verifyingContract: USDT0_ADDRESS as `0x${string}`,
+    },
+    types: authorizationTypes,
+    primaryType: "TransferWithAuthorization",
+    message: {
+      from: auth.from,
+      to: auth.to,
+      value: BigInt(auth.value),
+      validAfter: BigInt(auth.validAfter),
+      validBefore: BigInt(auth.validBefore),
+      nonce: auth.nonce,
+    },
+  });
+  return { auth, signature, address: account.address };
 }
 
-describe("buildChallenge", () => {
-  it("throws for an unconfigured route key", () => {
-    expect(() => buildChallenge("POST /api/nope", "https://x/api/nope")).toThrow(/no route config/);
-  });
-});
+const fac = () => new LocalFacilitatorClient();
 
-describe("okxPayGate — resource URL host fallback", () => {
-  it("uses 'localhost' when the request carries no Host header", async () => {
-    const gate = okxPayGate();
-    // craft a paid-route request with no Host header and no X-PAYMENT so the
-    // gate builds the 402 challenge, exercising `req.get('host') ?? 'localhost'`.
-    const req = {
-      method: "POST",
-      path: "/api/grade",
-      protocol: "http",
-      originalUrl: "/api/grade",
-      get: () => undefined,
-      header: () => undefined,
-    } as unknown as Request;
-    let sentChallenge: { resource: { url: string } } | undefined;
-    const res = {
-      status() {
-        return res;
-      },
-      set() {
-        return res;
-      },
-      json(payload: { resource: { url: string } }) {
-        sentChallenge = payload;
-        return res;
-      },
-    } as unknown as Response & { json: (p: unknown) => unknown };
-    const next = (() => {
-      throw new Error("next should not be called for an unpaid paid-route request");
-    }) as unknown as NextFunction;
-    await gate(req, res, next);
-    expect(sentChallenge?.resource.url).toBe("http://localhost/api/grade");
-  });
-});
-
-describe("verifyPayment — rejection reasons", () => {
-  it("scheme_mismatch", async () => {
-    const required = req();
-    const accepted = { ...required, scheme: "other" as unknown as "exact" };
-    const r = await verifyPayment(payload(accepted), required);
-    expect(r.invalidReason).toBe("scheme_mismatch");
+describe("LocalFacilitatorClient.verify — rejection reasons", () => {
+  it("missing signature → invalid_payload", async () => {
+    const { auth } = await sign(generatePrivateKey());
+    const r = await fac().verify({ payload: { authorization: auth } } as never, BASE_REQ as never);
+    expect(r.invalidReason).toBe("invalid_payload");
   });
 
-  it("network_mismatch", async () => {
-    const required = req();
-    const r = await verifyPayment(payload({ ...required, network: "eip155:1" }), required);
-    expect(r.invalidReason).toBe("network_mismatch");
-  });
-
-  it("asset_mismatch", async () => {
-    const required = req();
-    const r = await verifyPayment(payload({ ...required, asset: OTHER_ADDR }), required);
-    expect(r.invalidReason).toBe("asset_mismatch");
-  });
-
-  it("payto_mismatch", async () => {
-    const required = req();
-    const r = await verifyPayment(payload({ ...required, payTo: OTHER_ADDR }), required);
-    expect(r.invalidReason).toBe("payto_mismatch");
-  });
-
-  it("malformed_payload when authorization.from is not an address", async () => {
-    const required = req();
-    const r = await verifyPayment(payload(required, { from: "not-an-address" }), required);
-    expect(r.invalidReason).toBe("malformed_payload");
-  });
-
-  it("authorization_not_yet_valid", async () => {
-    const required = req();
-    const future = String(Math.floor(Date.now() / 1000) + 10_000);
-    const r = await verifyPayment(payload(required, { validAfter: future }), required);
-    expect(r.invalidReason).toBe("authorization_not_yet_valid");
-  });
-
-  it("authorization_expired", async () => {
-    const required = req();
+  it("authorization outside its time window → expired", async () => {
+    const account = privateKeyToAccount(generatePrivateKey());
     const past = String(Math.floor(Date.now() / 1000) - 10_000);
-    const r = await verifyPayment(payload(required, { validBefore: past }), required);
-    expect(r.invalidReason).toBe("authorization_expired");
+    const auth = { from: account.address, to: PAYTO_ADDRESS, value: BASE_REQ.amount, validAfter: "0", validBefore: past, nonce: rand() };
+    const r = await fac().verify({ payload: { authorization: auth, signature: "0x00" } } as never, BASE_REQ as never);
+    expect(r.invalidReason).toBe("expired");
   });
 
-  it("nonce_already_used", async () => {
-    const required = req();
-    const nonce = "0x" + "cd".repeat(32);
-    const backup = fs.existsSync(PATHS.usedNonces) ? fs.readFileSync(PATHS.usedNonces) : null;
-    try {
-      fs.mkdirSync(PATHS.fixtures, { recursive: true });
-      fs.writeFileSync(PATHS.usedNonces, JSON.stringify([nonce]));
-      const r = await verifyPayment(payload(required, { nonce }), required);
-      expect(r.invalidReason).toBe("nonce_already_used");
-    } finally {
-      if (backup) fs.writeFileSync(PATHS.usedNonces, backup);
-      else if (fs.existsSync(PATHS.usedNonces)) fs.rmSync(PATHS.usedNonces);
-    }
+  it("authorization.to != payTo → wrong_payee", async () => {
+    const other = privateKeyToAccount(generatePrivateKey()).address;
+    const { auth, signature } = await sign(generatePrivateKey(), { to: other });
+    const r = await fac().verify({ payload: { authorization: auth, signature } } as never, BASE_REQ as never);
+    expect(r.invalidReason).toBe("wrong_payee");
   });
 
-  it("signature_invalid when recovery throws on a bogus signature", async () => {
-    const required = req();
-    const r = await verifyPayment(payload(required, {}, "0x" + "11".repeat(65)), required);
+  it("value below required amount → insufficient_value", async () => {
+    const { auth, signature } = await sign(generatePrivateKey(), { value: "1" });
+    const r = await fac().verify({ payload: { authorization: auth, signature } } as never, BASE_REQ as never);
+    expect(r.invalidReason).toBe("insufficient_value");
+  });
+
+  it("recovered signer != authorization.from → signature_mismatch", async () => {
+    const impersonated = privateKeyToAccount(generatePrivateKey()).address;
+    const { auth, signature } = await sign(generatePrivateKey(), { from: impersonated });
+    const r = await fac().verify({ payload: { authorization: auth, signature } } as never, BASE_REQ as never);
+    expect(r.invalidReason).toBe("signature_mismatch");
+  });
+
+  it("a structurally-invalid signature is caught (recovery throws) → signature_invalid", async () => {
+    const { auth } = await sign(generatePrivateKey());
+    const r = await fac().verify({ payload: { authorization: auth, signature: "0x1234" } } as never, BASE_REQ as never);
     expect(r.invalidReason).toBe("signature_invalid");
   });
 
-  it("falls back to default asset name/version and throws on an unparseable network", async () => {
-    // required.network has no numeric chain id and extra carries no name/version,
-    // so the domain build exercises the `?? ASSET_NAME` / `?? ASSET_VERSION`
-    // fallbacks and chainIdFromCaip2 throws -> caught as signature_invalid.
-    const base = req();
-    const required: PaymentRequirements = { ...base, network: "eip155:notanumber", extra: {} };
-    const accepted: PaymentRequirements = { ...required };
-    const r = await verifyPayment(payload(accepted), required);
-    expect(r.invalidReason).toBe("signature_invalid");
+  it("a nonce already spent by settle() is rejected on re-verify → nonce_reused", async () => {
+    const nonce = rand();
+    const { auth, signature } = await sign(generatePrivateKey(), { nonce });
+    const f = fac();
+    await f.settle({ payload: { authorization: auth, signature } } as never, BASE_REQ as never);
+    const r = await f.verify({ payload: { authorization: auth, signature } } as never, BASE_REQ as never);
+    expect(r.invalidReason).toBe("nonce_reused");
+  });
+});
+
+describe("LocalFacilitatorClient.settle / getSettleStatus — honest local receipts", () => {
+  it("settle() on a valid payment returns success + a labeled local: marker (never a fake on-chain tx)", async () => {
+    const { auth, signature } = await sign(generatePrivateKey());
+    const r = await fac().settle({ payload: { authorization: auth, signature } } as never, BASE_REQ as never);
+    expect(r.success).toBe(true);
+    expect(r.status).toBe("pending");
+    expect(r.transaction.startsWith("local:")).toBe(true);
+  });
+
+  it("settle() short-circuits with the verify failure when the payload is invalid", async () => {
+    const { auth } = await sign(generatePrivateKey());
+    const r = await fac().settle({ payload: { authorization: auth } } as never, BASE_REQ as never);
+    expect(r.success).toBe(false);
+    expect(r.errorReason).toBe("invalid_payload");
+    expect(r.transaction).toBe("");
+  });
+
+  it("getSettleStatus is honestly pending (no live facilitator)", async () => {
+    const r = await fac().getSettleStatus("0xabc");
+    expect(r.success).toBe(false);
+    expect(r.errorReason).toBe("no_live_facilitator");
+  });
+});
+
+describe("okx.ts — facilitator selection + quoteSummary", () => {
+  it("without OKX creds, buildFacilitatorClient returns the local-faithful client", () => {
+    expect(buildFacilitatorClient()).toBeInstanceOf(LocalFacilitatorClient);
+    expect(quoteSummary().facilitator).toMatch(/LocalFacilitatorClient/);
+  });
+});
+
+describe("fetchSettleStatus — local + no-cred paths", () => {
+  it("a local: marker reports local_pending without a network call", async () => {
+    const r = await fetchSettleStatus(`local:${"f".repeat(40)}`);
+    expect(r.status).toBe("local_pending");
+    expect(r.live).toBe(false);
+  });
+
+  it("a non-local txHash with no creds reports unknown / not-live", async () => {
+    const r = await fetchSettleStatus("0xnotlocal");
+    expect(r.status).toBe("unknown");
+    expect(r.live).toBe(false);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Credentialed settlement / status — mocked fetch, fresh module with creds set.
+// Credentialed paths — fresh module reload with OKX creds stubbed in the env.
 // ---------------------------------------------------------------------------
 
 async function importOkxWithCreds() {
@@ -177,121 +171,62 @@ async function importOkxWithCreds() {
   return import("../api/rails/okx");
 }
 
-function makePayload(okx: typeof import("../api/rails/okx")) {
-  const required = okx.buildPaymentRequirements(okx.CLV_PAY_ROUTES["POST /api/grade"], "https://x/api/grade");
-  const nowSec = Math.floor(Date.now() / 1000);
-  const p: PaymentPayload = {
-    x402Version: 2,
-    accepted: required,
-    payload: {
-      signature: "0x00" as `0x${string}`,
-      authorization: {
-        from: VALID_ADDR,
-        to: OTHER_ADDR,
-        value: required.amount,
-        validAfter: String(nowSec - 60),
-        validBefore: String(nowSec + 3600),
-        nonce: "0x" + Math.random().toString(16).slice(2).padEnd(64, "0"),
-      },
-    },
-  };
-  return { required, p };
-}
-
-describe("settlePayment — with facilitator creds (mocked fetch)", () => {
-  const noncesBackup = fs.existsSync(PATHS.usedNonces) ? fs.readFileSync(PATHS.usedNonces) : null;
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.unstubAllGlobals();
-    vi.resetModules();
-    if (noncesBackup) fs.writeFileSync(PATHS.usedNonces, noncesBackup);
-    else if (fs.existsSync(PATHS.usedNonces)) fs.rmSync(PATHS.usedNonces);
-  });
-
-  it("calls the facilitator and returns its confirmed receipt", async () => {
-    const okx = await importOkxWithCreds();
-    vi.stubGlobal("fetch", vi.fn(async () => ({
-      json: async () => ({ success: true, status: "success", transaction: "0xdeadbeef" }),
-    })) as unknown as typeof fetch);
-    const { required, p } = makePayload(okx);
-    const receipt = await okx.settlePayment(p, required);
-    expect(receipt.success).toBe(true);
-    expect(receipt.status).toBe("success");
-    expect(receipt.transaction).toBe("0xdeadbeef");
-    expect(receipt.is_placeholder).toBe(false);
-    expect((globalThis.fetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length).toBe(1);
-  });
-
-  it("defaults status/transaction when the facilitator omits them", async () => {
-    const okx = await importOkxWithCreds();
-    vi.stubGlobal("fetch", vi.fn(async () => ({ json: async () => ({ success: true }) })) as unknown as typeof fetch);
-    const { required, p } = makePayload(okx);
-    const receipt = await okx.settlePayment(p, required);
-    expect(receipt.status).toBe("pending");
-    expect(receipt.transaction).toBe("");
-  });
-
-  it("falls back to an honest local_pending when the facilitator is unreachable", async () => {
-    const okx = await importOkxWithCreds();
-    vi.stubGlobal("fetch", vi.fn(async () => {
-      throw new Error("network down");
-    }) as unknown as typeof fetch);
-    const { required, p } = makePayload(okx);
-    const receipt = await okx.settlePayment(p, required);
-    expect(receipt.success).toBe(false);
-    expect(receipt.status).toBe("local_pending");
-    expect(receipt.is_placeholder).toBe(true);
-  });
-});
-
-describe("fetchSettleStatus — with facilitator creds (mocked fetch)", () => {
+describe("okx.ts — real-credentials facilitator branch (isolated module reload)", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.resetModules();
   });
 
-  it("queries GET /settle/status and reports it live", async () => {
+  it("constructs the OKXFacilitatorClient when Developer Portal creds are present", async () => {
     const okx = await importOkxWithCreds();
-    vi.stubGlobal("fetch", vi.fn(async () => ({ json: async () => ({ status: "confirmed" }) })) as unknown as typeof fetch);
-    const r = await okx.fetchSettleStatus("0xnotlocal");
+    const { OKXFacilitatorClient } = await import("@okxweb3/x402-core");
+    expect(okx.buildFacilitatorClient()).toBeInstanceOf(OKXFacilitatorClient);
+    expect(okx.quoteSummary().facilitator).toMatch(/OKXFacilitatorClient \(live\)/);
+  });
+
+  it("fetchSettleStatus queries the live facilitator GET /settle/status", async () => {
+    const okx = await importOkxWithCreds();
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ status: "success" }) })) as unknown as typeof fetch);
+    const r = await okx.fetchSettleStatus("0xdeadbeef");
     expect(r.live).toBe(true);
-    expect(r.status).toBe("confirmed");
+    expect(r.status).toBe("success");
     expect(r.source).toContain("Facilitator");
   });
 
-  it("defaults to unknown when the facilitator omits status", async () => {
+  it("fetchSettleStatus reports unreachable when the status request fails", async () => {
     const okx = await importOkxWithCreds();
-    vi.stubGlobal("fetch", vi.fn(async () => ({ json: async () => ({}) })) as unknown as typeof fetch);
-    const r = await okx.fetchSettleStatus("0xnotlocal");
-    expect(r.status).toBe("unknown");
-    expect(r.live).toBe(true);
-  });
-
-  it("reports unreachable when the status request fails", async () => {
-    const okx = await importOkxWithCreds();
-    vi.stubGlobal("fetch", vi.fn(async () => {
-      throw new Error("boom");
-    }) as unknown as typeof fetch);
-    const r = await okx.fetchSettleStatus("0xnotlocal");
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("boom"); }) as unknown as typeof fetch);
+    const r = await okx.fetchSettleStatus("0xdeadbeef");
     expect(r.live).toBe(false);
     expect(r.status).toBe("unreachable");
   });
+});
 
-  it("reads a matching local receipt from the receipt log", async () => {
-    const okx = await importOkxWithCreds();
-    const tx = `local:${"f".repeat(40)}`;
-    const backup = fs.existsSync(PATHS.receiptLog) ? fs.readFileSync(PATHS.receiptLog) : null;
-    try {
-      okx.appendReceiptLog({ transaction: tx, payer: VALID_ADDR, network: "eip155:196", amount: "10000", is_placeholder: true, settled_at: new Date().toISOString() });
-      const found = await okx.fetchSettleStatus(tx);
-      expect(found.status).toBe("local_pending");
-      const missing = await okx.fetchSettleStatus(`local:${"0".repeat(40)}`);
-      expect(missing.status).toBe("not_found");
-    } finally {
-      if (backup) fs.writeFileSync(PATHS.receiptLog, backup);
-      else if (fs.existsSync(PATHS.receiptLog)) fs.rmSync(PATHS.receiptLog);
-    }
+describe("okx.ts — warmFacilitator() boot self-check", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("resolves and reports ready when the (local) facilitator handshake succeeds", async () => {
+    const { warmFacilitator } = await import("../api/rails/okx");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    await expect(warmFacilitator()).resolves.toBeUndefined();
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("x402 facilitator ready"));
+    log.mockRestore();
+  });
+
+  it("swallows a slow handshake via the bounded timeout (logs a warning, never throws)", async () => {
+    const { x402ResourceServer } = await import("@okxweb3/x402-core/server");
+    const { warmFacilitator } = await import("../api/rails/okx");
+    const init = vi
+      .spyOn(x402ResourceServer.prototype, "initialize")
+      .mockImplementation(() => new Promise<void>((resolve) => { setTimeout(resolve, 50); }));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(warmFacilitator(1)).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("facilitator warm-up failed"));
+    init.mockRestore();
+    warn.mockRestore();
   });
 });
