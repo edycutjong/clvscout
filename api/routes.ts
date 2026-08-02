@@ -55,6 +55,30 @@ function ledger() {
   return loadOrBuildSettledLedger();
 }
 
+/**
+ * Recover the paying wallet from the payment header for BuyerLens attribution.
+ *
+ * The official SDK's `paymentMiddleware` verifies the payment before this
+ * handler runs but does not attach the payer to `req`, so we re-decode the
+ * base64 `PAYMENT-SIGNATURE` / `X-PAYMENT` payload and read
+ * `authorization.from`. The gate already proved this signature is valid
+ * (ARCHITECTURE invariant 1), so this is a read, not a second trust decision.
+ * Returns undefined for unpaid/malformed headers (defensive — e.g. unit calls).
+ */
+function decodePayer(req: Request): string | undefined {
+  const header = typeof req.header === "function" ? req.header("PAYMENT-SIGNATURE") ?? req.header("X-PAYMENT") : undefined;
+  if (!header) return undefined;
+  try {
+    const decoded = JSON.parse(Buffer.from(header, "base64").toString("utf8")) as {
+      payload?: { authorization?: { from?: string } };
+    };
+    const from = decoded.payload?.authorization?.from;
+    return from ? String(from) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function gradeHandler(req: Request, res: Response): Promise<void> {
   const parsed = gradeRequestSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -73,7 +97,7 @@ export async function gradeHandler(req: Request, res: Response): Promise<void> {
 
   const { truthTable } = ledger();
   const outcome = gradeBet(parsed.data, truthTable);
-  const payer = req.x402?.payer;
+  const payer = decodePayer(req);
 
   recordBuyerGrade({
     from: payer ?? "unknown",

@@ -168,19 +168,20 @@ describe("paid POST /api/audit", () => {
   });
 });
 
-describe("okxPayGate — rejection branches", () => {
-  it("402 malformed_payment_header when X-PAYMENT is not decodable", async () => {
+describe("okxPayGate — rejection branches (official SDK)", () => {
+  it("a malformed X-PAYMENT header is rejected (402), never unlocks the handler or 5xxs", async () => {
     const res = await fetch(`${BASE}/api/grade`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-PAYMENT": "!!!not-base64-json!!!" },
       body: "{}",
     });
     expect(res.status).toBe(402);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("malformed_payment_header");
+    expect(res.status).toBeLessThan(500);
+    // the challenge still rides the PAYMENT-REQUIRED header (validator reads it)
+    expect(res.headers.get("PAYMENT-REQUIRED")).toBeTruthy();
   });
 
-  it("402 with an invalidReason when the signature does not verify", async () => {
+  it("a payment whose signature does not verify is rejected (402), never 200", async () => {
     const account = privateKeyToAccount(generatePrivateKey());
     const probe = await fetch(`${BASE}/api/grade`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     const challenge = (await probe.json()) as { accepts: { payTo: string; amount: string; network: string; asset: string; extra: Record<string, string> }[] };
@@ -205,8 +206,7 @@ describe("okxPayGate — rejection branches", () => {
       body: "{}",
     });
     expect(res.status).toBe(402);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("signature_invalid");
+    expect(res.status).not.toBe(200);
   });
 });
 

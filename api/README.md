@@ -4,10 +4,14 @@ The Express app and the OKX x402 payment rail. Pure HTTP + payments — all grad
 math lives in [`../engine/`](../engine) and persistence in [`../db/`](../db); this
 layer only wires them behind paid/free routes.
 
-> **Zero `@okxweb3` dependency by design.** Unlike the sibling EdgeLedger build (which
-> imports `@okxweb3/x402-express`), CLV Scout's [`rails/okx.ts`](rails/okx.ts)
-> **hand-rolls the same documented x402 `exact` wire shapes** with only `viem` +
-> `express`, so the whole payment leg installs, boots, and unit-tests fully offline.
+> **Built on the official OKX Payment SDK.** [`rails/okx.ts`](rails/okx.ts) wires the
+> published `@okxweb3/x402-express` `paymentMiddleware` over an `x402ResourceServer`
+> with the server-side `ExactEvmScheme` (`@okxweb3/x402-evm/exact/server`) and the
+> `OKXFacilitatorClient` (`@okxweb3/x402-core`) — the same SDK the OKX.AI listing
+> review verifies against. When no OKX Developer Portal credentials are configured
+> (local/CI/demo), a drop-in `LocalFacilitatorClient` does REAL EIP-712 signature
+> recovery but reports settlement honestly as `pending`/`local:` (never a fabricated
+> on-chain receipt), so the whole payment leg still boots and unit-tests offline.
 
 ## Files
 
@@ -16,7 +20,8 @@ layer only wires them behind paid/free routes.
 | [`server.ts`](server.ts) | `createApp()` — builds the Express app: CORS + JSON, mounts the x402 gate, the routes, and serves the [`../web/`](../web) proof page. |
 | [`main.ts`](main.ts) | Thin bootstrap for `npm run api` / `dev` — binds `createApp()` to a socket. Kept separate so `createApp` stays import-safe for tests. |
 | [`routes.ts`](routes.ts) | The request handlers (`gradeHandler`, `auditHandler`, `calibrationHandler`, `meHandler`, `receiptsVerifyHandler`, `demoRunHandler`, health / 405). |
-| [`rails/okx.ts`](rails/okx.ts) | The hand-rolled x402 rail: routes map, 402 challenge builder, **offline** EIP-3009/EIP-712 verification (`viem`), settlement, and the `okxPayGate()` middleware. |
+| [`rails/okx.ts`](rails/okx.ts) | The official-SDK x402 rail: per-route `buildRoutes()`, `x402ResourceServer` + `ExactEvmScheme`, facilitator selection (`OKXFacilitatorClient` / `LocalFacilitatorClient`), `warmFacilitator()`, and the `okxPayGate()` = SDK `paymentMiddleware`. |
+| [`rails/localFacilitator.ts`](rails/localFacilitator.ts) | Local-faithful `FacilitatorClient` used without OKX creds: real EIP-712/EIP-3009 signature recovery (`viem`), honest `pending`/`local:` settlement — plugs into the real SDK unchanged. |
 | [`buyerlens.ts`](buyerlens.ts) | **BuyerLens** — records/reads a payer's grading history keyed off their X-PAYMENT identity (`recordBuyerGrade`, `buildYouBlock`, `getBuyerHistory`, `forgetBuyer`). |
 | [`demoRunner.ts`](demoRunner.ts) | `runDemo()` — a real, server-side x402 round-trip (throwaway key) powering `POST /api/demo/run`, so the browser proof page shows live payments (browsers can't sign). |
 | [`receipts.ts`](receipts.ts) | `fetchSettleStatus` re-export + `EXPLORER_URL_FOR` — the `/api/receipts/verify` helpers. |

@@ -6,7 +6,7 @@ Same repo, same server family as EdgeLedger's OKX rail — a **second Express ap
 
 ```mermaid
 flowchart LR
-  A[Agent / bettor] -->|POST /api/grade + X-PAYMENT $0.01| MW[okxPayGate<br/>hand-rolled x402 exact, viem+express]
+  A[Agent / bettor] -->|POST /api/grade + X-PAYMENT $0.01| MW[okxPayGate<br/>official @okxweb3 x402-express paymentMiddleware]
   MW <--> FAC[OKX Facilitator REST<br/>verify + settle -> X Layer eip155:196]
   MW --> G[Grade engine<br/>CLV% -> A+...F]
   G --> LH[(line-history snapshots<br/>entry / close odds)]
@@ -26,7 +26,7 @@ flowchart LR
 | `POST /api/calibration` | free | `{}` | `{bands, table:[{grade, n, win_rate, roi_pct}], window, methodology, last_settled_at}` |
 | `POST /api/me` | free | `{address}` (+`forget:true`) | buyer's grading history (shared BuyerLens module) |
 | `POST /api/receipts/verify` | free | `{txHash}` | live settlement re-check via Facilitator `GET /settle/status` (shared module) |
-| `GET /api/grade` | — | | `405` |
+| `GET /api/grade` | same **$0.01 x402** gate | | `402` challenge (method-less route — OKX's review probe uses GET; a paid GET carries params in the query string) |
 
 ### Tier-2 service (registered after CLV Scout's own listing passes)
 
@@ -36,23 +36,31 @@ flowchart LR
 
 **Routes map (the only payment config):**
 
+Keys are **path-only** (method-less) so an unpaid GET probe gets the same 402
+challenge as POST — OKX's review probe defaults to GET. `okxPayGate()` returns
+the official `@okxweb3/x402-express` `paymentMiddleware` over a resource server
+that registers the server-side `ExactEvmScheme` and an `OKXFacilitatorClient`
+(or the local-faithful `LocalFacilitatorClient` when no creds are set):
+
 ```ts
-export const clvPayGate = paymentMiddleware(
-  {
-    "POST /api/grade": {
-      accepts: [{ scheme: "exact", network: NET, payTo: PAYTO, price: "$0.01" }],
-      description: "CLV Scout — grade a placed World Cup bet against the closing line; returns grade, CLV%, and the settled truth table for that grade.",
-      mimeType: "application/json",
+export function okxPayGate() {
+  return paymentMiddleware(
+    {
+      "/api/grade": {
+        accepts: [{ scheme: "exact", network: NET, payTo: PAYTO, price: { asset: USDT0, amount: "10000" } }], // $0.01
+        description: "CLV Scout — grade a placed World Cup bet against the closing line; returns grade, CLV%, and the settled truth table for that grade.",
+        mimeType: "application/json",
+      },
+      "/api/audit": {
+        accepts: [{ scheme: "exact", network: NET, payTo: PAYTO, price: { asset: USDT0, amount: "200000" } }], // $0.20
+        description: "CLV Scout audit — up to 25 placed bets → full CLV dossier: per-bet grades, beat-close rate, Sharp Score with origin-disclosed sub-scores.",
+        mimeType: "application/json",
+      },
+      // Tier 2 (post-listing): "/api/grade-stream" under aggr_deferred — config per methods-batch page
     },
-    "POST /api/audit": {
-      accepts: [{ scheme: "exact", network: NET, payTo: PAYTO, price: "$0.20" }],
-      description: "CLV Scout audit — up to 25 placed bets → full CLV dossier: per-bet grades, beat-close rate, Sharp Score with origin-disclosed sub-scores.",
-      mimeType: "application/json",
-    },
-    // Tier 2 (post-listing): "POST /api/grade-stream" under aggr_deferred — config per methods-batch page (Day-1 doc fetch)
-  },
-  resourceServer, // same OKXFacilitatorClient/ExactEvmScheme instance factory as EdgeLedger
-);
+    buildResourceServer(), // x402ResourceServer + ExactEvmScheme + OKXFacilitatorClient/LocalFacilitatorClient
+  );
+}
 ```
 
 ## Grading math (all in one tested module)

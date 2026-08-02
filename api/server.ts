@@ -63,7 +63,48 @@ export function createApp(): express.Express {
     }),
   );
 
+  // Per-paid-route shim that makes the official SDK's paymentMiddleware behave
+  // the way OKX.AI's marketplace validator (and CLV Scout's v1-style clients)
+  // expect — applied to the two gated paths BEFORE the gate itself:
+  //
+  //  1. Force `Accept: application/json`. The SDK's browser sniff (Accept:
+  //     text/html) swaps the 402 for an HTML paywall WITHOUT the
+  //     PAYMENT-REQUIRED header — and that header is what the validator reads.
+  //  2. Mirror `X-PAYMENT` (v1) into `PAYMENT-SIGNATURE` (what the SDK core's
+  //     extractPayment actually reads) so a v1-style payer isn't re-402'd
+  //     forever ("x402 validation failed" / "task timed out" in review).
+  //  3. Mirror the base64 PAYMENT-REQUIRED challenge into the 402 JSON BODY —
+  //     the SDK sends `{}` there, but validators (and our own buyer/demo
+  //     clients) that read the body need the full challenge.
+  //  4. Mirror the settlement `PAYMENT-RESPONSE` header into
+  //     `X-PAYMENT-RESPONSE` for v1-style clients.
   if (PAY_RAIL === "okx") {
+    app.use(["/api/grade", "/api/audit"], (req: Request, res: Response, next: NextFunction) => {
+      req.headers.accept = "application/json";
+      if (!req.headers["payment-signature"] && req.headers["x-payment"]) {
+        req.headers["payment-signature"] = req.headers["x-payment"];
+      }
+      const origJson = res.json.bind(res);
+      res.json = (body?: unknown) => {
+        const hdr = res.getHeader("PAYMENT-REQUIRED");
+        const isEmpty = body == null || (typeof body === "object" && Object.keys(body as object).length === 0);
+        if (res.statusCode === 402 && typeof hdr === "string" && isEmpty) {
+          try {
+            return origJson(JSON.parse(Buffer.from(hdr, "base64").toString("utf8")));
+          } catch {
+            /* fall through to the SDK body */
+          }
+        }
+        return origJson(body);
+      };
+      const origSetHeader = res.setHeader.bind(res);
+      res.setHeader = ((name: string, value: number | string | readonly string[]) => {
+        const out = origSetHeader(name, value);
+        if (String(name).toLowerCase() === "payment-response") origSetHeader("X-PAYMENT-RESPONSE", value);
+        return out;
+      }) as typeof res.setHeader;
+      next();
+    });
     app.use(okxPayGate());
   }
 

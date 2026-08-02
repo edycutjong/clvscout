@@ -9,6 +9,7 @@
  * the API/HTTP tests.
  */
 import { createApp } from "./server";
+import { warmFacilitator } from "./rails/okx";
 import { PORT, PAY_RAIL, X402_NETWORK, HAS_REAL_FACILITATOR_CREDS } from "../config";
 
 const app = createApp();
@@ -16,4 +17,8 @@ app.listen(PORT, () => {
   console.log(`CLV Scout API on http://localhost:${PORT} (rail=${PAY_RAIL}, network=${X402_NETWORK})`);
   console.log(`  facilitator creds loaded: ${HAS_REAL_FACILITATOR_CREDS} (no creds = local-pending settlement, honestly labeled)`);
   console.log(`  try: curl -i -X POST http://localhost:${PORT}/api/grade`);
+  // Prime the official SDK facilitator handshake at boot (non-blocking) so the
+  // first paid call is warm and any cred/network error shows up here, not on a
+  // buyer's request — see warmFacilitator(). Only when the okx rail is active.
+  if (PAY_RAIL === "okx") void warmFacilitator();
 });
