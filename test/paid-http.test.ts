@@ -36,13 +36,23 @@ function randomNonce(): `0x${string}` {
   return ("0x" + Buffer.from(bytes).toString("hex")) as `0x${string}`;
 }
 
+/**
+ * A well-formed body for each paid route. The probe MUST carry valid params:
+ * since api/validate.ts validates ahead of the pay gate, a param-less POST is
+ * answered 400 and never yields a challenge (that is the point of the gate).
+ */
+const VALID_PROBE_BODY: Record<string, unknown> = {
+  "/api/grade": { match: "BRA vs SRB", selection: "Brazil ML", odds_taken: 1.55 },
+  "/api/audit": { bets: [{ match: "BRA vs SRB", selection: "Brazil ML", odds_taken: 1.55 }] },
+};
+
 /** Probe the paid route, sign a real EIP-3009 authorization, return an X-PAYMENT header. */
 async function signPaymentHeader(path: string): Promise<string> {
   const account = privateKeyToAccount(generatePrivateKey());
   const probe = await fetch(`${BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: "{}",
+    body: JSON.stringify(VALID_PROBE_BODY[path]),
   });
   expect(probe.status).toBe(402);
   const challenge = (await probe.json()) as {
@@ -136,12 +146,17 @@ describe("paid POST /api/grade", () => {
     expect(body.clv_grade).toBe("UNGRADED");
   });
 
-  it("returns a 200 usage response for a paid-but-malformed body (agent-runtime friendly)", async () => {
+  it("400s a malformed body BEFORE settling the payment (never charges for an error)", async () => {
     const res = await paidPost("/api/grade", { nonsense: true });
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { service: string; example_request: unknown };
+    expect(res.status).toBe(400);
+    // no settlement happened: the gate never ran, so there is no receipt header
+    expect(res.headers.get("X-PAYMENT-RESPONSE")).toBeNull();
+    expect(res.headers.get("PAYMENT-RESPONSE")).toBeNull();
+    const body = (await res.json()) as { error: string; service: string; example_request: unknown; payment: string };
+    expect(body.error).toBe("invalid_request");
     expect(body.service).toBe("CLV Grade");
     expect(body.example_request).toBeTruthy();
+    expect(body.payment).toMatch(/nothing was deducted/i);
   });
 });
 
@@ -160,10 +175,12 @@ describe("paid POST /api/audit", () => {
     expect(typeof body.sharp_score.value).toBe("number");
   });
 
-  it("returns a 200 usage response for a paid-but-invalid audit body (empty bets)", async () => {
+  it("400s an invalid audit body (empty bets) BEFORE settling the payment", async () => {
     const res = await paidPost("/api/audit", { bets: [] });
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { service: string };
+    expect(res.status).toBe(400);
+    expect(res.headers.get("X-PAYMENT-RESPONSE")).toBeNull();
+    const body = (await res.json()) as { error: string; service: string };
+    expect(body.error).toBe("invalid_request");
     expect(body.service).toBe("CLV Audit");
   });
 });
@@ -173,7 +190,7 @@ describe("okxPayGate — rejection branches (official SDK)", () => {
     const res = await fetch(`${BASE}/api/grade`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-PAYMENT": "!!!not-base64-json!!!" },
-      body: "{}",
+      body: JSON.stringify(VALID_PROBE_BODY["/api/grade"]),
     });
     expect(res.status).toBe(402);
     expect(res.status).toBeLessThan(500);
@@ -183,7 +200,11 @@ describe("okxPayGate — rejection branches (official SDK)", () => {
 
   it("a payment whose signature does not verify is rejected (402), never 200", async () => {
     const account = privateKeyToAccount(generatePrivateKey());
-    const probe = await fetch(`${BASE}/api/grade`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const probe = await fetch(`${BASE}/api/grade`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(VALID_PROBE_BODY["/api/grade"]),
+    });
     const challenge = (await probe.json()) as { accepts: { payTo: string; amount: string; network: string; asset: string; extra: Record<string, string> }[] };
     const required = challenge.accepts[0];
     const nowSec = Math.floor(Date.now() / 1000);
@@ -203,7 +224,7 @@ describe("okxPayGate — rejection branches (official SDK)", () => {
     const res = await fetch(`${BASE}/api/grade`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-PAYMENT": header },
-      body: "{}",
+      body: JSON.stringify(VALID_PROBE_BODY["/api/grade"]),
     });
     expect(res.status).toBe(402);
     expect(res.status).not.toBe(200);

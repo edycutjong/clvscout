@@ -9,6 +9,9 @@
  *   GET  /api/grade             same x402 gate (OKX's review probe is a GET; params ride the query string)
  *   GET  /api/audit             same x402 gate
  *   GET  /health
+ *
+ * Middleware order on the two paid paths — validation precedes payment:
+ *   cors -> json -> rate-limit -> header shim -> paramPreflight -> okxPayGate -> handler
  */
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
@@ -16,6 +19,7 @@ import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { okxPayGate } from "./rails/okx";
+import { paramPreflight } from "./validate";
 import {
   gradeHandler,
   auditHandler,
@@ -105,6 +109,12 @@ export function createApp(): express.Express {
       }) as typeof res.setHeader;
       next();
     });
+    // Business-parameter validation runs BEFORE the payment gate (OKX.AI
+    // listing requirement): a call with missing/invalid params is answered
+    // 400 here, so the challenge is never issued and — for a caller that
+    // already holds a signed challenge — the signature is never verified and
+    // never settled. See api/validate.ts for the three cases.
+    app.use(paramPreflight());
     app.use(okxPayGate());
   }
 

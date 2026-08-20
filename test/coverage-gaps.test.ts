@@ -40,10 +40,12 @@ function randomNonce(): `0x${string}` {
 /** Probe the paid route (POST), sign a real EIP-3009 authorization, return an X-PAYMENT header. */
 async function signPaymentHeader(path: string): Promise<string> {
   const account = privateKeyToAccount(generatePrivateKey());
+  // params must be valid on the probe: api/validate.ts 400s a param-less POST
+  // before the pay gate can issue a challenge.
   const probe = await fetch(`${base}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: "{}",
+    body: JSON.stringify({ match: "BRA vs SRB", selection: "Brazil ML", odds_taken: 1.55 }),
   });
   const challenge = (await probe.json()) as {
     accepts: { network: string; asset: string; amount: string; payTo: string; extra: Record<string, string> }[];
