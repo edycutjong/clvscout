@@ -130,18 +130,37 @@ jobs:
           echo "::error::server did not become ready in time"
           cat server.log || true
           exit 1
-      - name: "Self-check — POST /api/grade unpaid -> 402 + x402Version:2"
+      # Params must be VALID to earn a challenge: api/validate.ts validates ahead
+      # of the pay gate, so a param-less POST is answered 400 by design.
+      - name: "Self-check — POST /api/grade (valid params, unpaid) -> 402 + x402Version:2"
         run: |
-          STATUS=$(curl -s -o /tmp/grade.json -w "%{http_code}" -X POST http://localhost:4021/api/grade -H "Content-Type: application/json" -d '{}')
+          STATUS=$(curl -s -o /tmp/grade.json -w "%{http_code}" -X POST http://localhost:4021/api/grade -H "Content-Type: application/json" -d '{"match":"BRA vs SRB","selection":"Brazil ML","odds_taken":1.55}')
           echo "status=$STATUS"; cat /tmp/grade.json
           test "$STATUS" = "402"
           grep -q '"x402Version":2' /tmp/grade.json
-      - name: "Self-check — POST /api/audit unpaid -> 402 + x402Version:2"
+      - name: "Self-check — POST /api/audit (valid params, unpaid) -> 402 + x402Version:2"
         run: |
-          STATUS=$(curl -s -o /tmp/audit.json -w "%{http_code}" -X POST http://localhost:4021/api/audit -H "Content-Type: application/json" -d '{}')
+          STATUS=$(curl -s -o /tmp/audit.json -w "%{http_code}" -X POST http://localhost:4021/api/audit -H "Content-Type: application/json" -d '{"bets":[{"match":"BRA vs SRB","selection":"Brazil ML","odds_taken":1.55}]}')
           echo "status=$STATUS"; cat /tmp/audit.json
           test "$STATUS" = "402"
           grep -q '"x402Version":2' /tmp/audit.json
+      # OKX.AI listing rule: parameter validation completes BEFORE the challenge.
+      # An invalid call must get 400 and must NOT carry a PAYMENT-REQUIRED header.
+      - name: "Self-check — POST /api/grade (missing params) -> 400, NO challenge"
+        run: |
+          STATUS=$(curl -s -D /tmp/bad-grade-headers.txt -o /tmp/bad-grade.json -w "%{http_code}" -X POST http://localhost:4021/api/grade -H "Content-Type: application/json" -d '{"match":"BRA vs SRB"}')
+          echo "status=$STATUS"; cat /tmp/bad-grade.json
+          test "$STATUS" = "400"
+          grep -q '"error":"invalid_request"' /tmp/bad-grade.json
+          # the CORS Access-Control-Expose-Headers line also mentions the header name,
+          # so assert on the response header itself, not any occurrence of the string
+          ! grep -qi '^payment-required:' /tmp/bad-grade-headers.txt
+      - name: "Self-check — POST /api/audit (empty bets) -> 400, NO challenge"
+        run: |
+          STATUS=$(curl -s -D /tmp/bad-audit-headers.txt -o /tmp/bad-audit.json -w "%{http_code}" -X POST http://localhost:4021/api/audit -H "Content-Type: application/json" -d '{"bets":[]}')
+          echo "status=$STATUS"; cat /tmp/bad-audit.json
+          test "$STATUS" = "400"
+          ! grep -qi '^payment-required:' /tmp/bad-audit-headers.txt
       - name: "Self-check — GET /api/grade unpaid -> 402 challenge (OKX review probes with GET)"
         run: |
           STATUS=$(curl -s -D /tmp/grade-get-headers.txt -o /dev/null -w "%{http_code}" -X GET http://localhost:4021/api/grade)
@@ -174,4 +193,4 @@ jobs:
           echo "  - Stage 2 - Secret Scanning (TruffleHog)"
           echo "  - Stage 2 - Dependency Audit (npm audit + license-checker)"
           echo "  - Stage 3 - Build Verification (tsc)"
-          echo "  - Stage 4 - API Smoke (402/402/402+header/200 self-check)"
+          echo "  - Stage 4 - API Smoke (402/402 valid-params, 400/400 no-challenge, 402+header GET, 200 free)"
