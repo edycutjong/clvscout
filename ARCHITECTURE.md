@@ -89,6 +89,7 @@ export function okxPayGate() {
 ## Invariants (tested)
 
 1. Unpaid `POST /api/grade` and `POST /api/audit` → 402 with `x402Version:2`; never reach the grade engine.
+1b. **Validation before payment** (`api/validate.ts::paramPreflight`, mounted ahead of `okxPayGate`): a call with missing/invalid business params is answered `400` — the x402 challenge is never issued, and a caller who already holds a signed challenge is never verified and never settled. Only the param-less discovery `GET` (the marketplace reachability probe / `onchainos payment quote`) still receives the challenge, and even that cannot be charged for an error. Tested end-to-end in `test/prepay-validation.test.ts`, including the deduction guarantee: after a rejected paid call the authorization nonce is still unspent, so the same signature still buys a real grade.
 2. `UNGRADED` whenever close data is absent — no synthetic closes, ever; dossiers report `graded/ungraded` counts.
 3. Truth-table rows sum to the settled-ledger count; per-grade ROI recomputable by the shared audit script.
 4. `/api/calibration`, `/api/me`, `/api/receipts/verify` free under all configs; band constants in responses match the constants in code (single source).

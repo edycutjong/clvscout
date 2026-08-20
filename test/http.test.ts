@@ -63,7 +63,7 @@ describe("POST /api/audit — unpaid", () => {
     const res = await fetch(`${base}/api/audit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bets: [] }),
+      body: JSON.stringify({ bets: [{ match: "BRA vs SRB", selection: "Brazil ML", odds_taken: 1.55 }] }),
     });
     expect(res.status).toBe(402);
     const body = (await res.json()) as any;
@@ -122,13 +122,43 @@ describe("free endpoints stay free (200, no X-PAYMENT needed)", () => {
   });
 });
 
-describe("400 on malformed paid-route bodies is impossible to observe unpaid", () => {
-  it("a malformed body still gets 402 before validation (payment gate runs first)", async () => {
+describe("parameter validation runs BEFORE the payment challenge (OKX.AI listing rule)", () => {
+  it("a malformed body gets 400 and NO challenge — the buyer is never asked to sign", async () => {
     const res = await fetch(`${base}/api/grade`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nonsense: true }),
     });
-    expect(res.status).toBe(402);
+    expect(res.status).toBe(400);
+    expect(res.headers.get("PAYMENT-REQUIRED")).toBeNull();
+    const body = (await res.json()) as { error: string; example_request: unknown };
+    expect(body.error).toBe("invalid_request");
+    expect(body.example_request).toBeTruthy();
+  });
+
+  it("a partially-specified body (missing odds_taken) gets 400, not a challenge", async () => {
+    const res = await fetch(`${base}/api/grade`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ match: "BRA vs SRB", selection: "Brazil ML" }),
+    });
+    expect(res.status).toBe(400);
+    expect(res.headers.get("PAYMENT-REQUIRED")).toBeNull();
+  });
+
+  it("an invalid audit body (empty bets) gets 400, not a challenge", async () => {
+    const res = await fetch(`${base}/api/audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bets: [] }),
+    });
+    expect(res.status).toBe(400);
+    expect(res.headers.get("PAYMENT-REQUIRED")).toBeNull();
+  });
+
+  it("a GET carrying invalid query params gets 400, not a challenge", async () => {
+    const res = await fetch(`${base}/api/grade?match=BRA%20vs%20SRB&selection=Brazil%20ML&odds_taken=0.5`);
+    expect(res.status).toBe(400);
+    expect(res.headers.get("PAYMENT-REQUIRED")).toBeNull();
   });
 });

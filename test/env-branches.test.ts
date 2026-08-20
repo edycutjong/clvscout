@@ -39,14 +39,14 @@ describe("server + demoRunner with PAY_RAIL != okx (gate not mounted)", () => {
     await new Promise<void>((resolve) => server.once("listening", resolve));
     try {
       // gate NOT mounted -> unpaid POST reaches the handler, which answers the
-      // empty body with the 200 usage response (never a 402). Proves the
+      // empty body with its own 400 usage response (never a 402). Proves the
       // PAY_RAIL !== "okx" branch.
       const direct = await fetch(`${BASE}/api/grade`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
       });
-      expect(direct.status).toBe(200);
+      expect(direct.status).toBe(400);
       expect(((await direct.json()) as { service: string }).service).toBe("CLV Grade");
 
       // the server-side demo runner probes /api/grade, gets a non-402, and
@@ -58,7 +58,7 @@ describe("server + demoRunner with PAY_RAIL != okx (gate not mounted)", () => {
       });
       expect(demo.status).toBe(200);
       const body = (await demo.json()) as { paid_status: number; challenge_line: string; settlement: string };
-      expect(body.paid_status).toBe(200);
+      expect(body.paid_status).toBe(400);
       expect(body.challenge_line).toContain("unexpected status");
       expect(body.settlement).toBe("n/a");
     } finally {
