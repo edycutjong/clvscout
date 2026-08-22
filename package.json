@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "CLV Scout — grade a bet against the closing line. Pay-per-grade ($0.01) + pay-per-audit ($0.20) A2MCP on OKX x402 (X Layer). Self-contained sibling of EdgeLedger.",
+  "description": "CLV Scout \u2014 grade a bet against the closing line. Pay-per-grade ($0.01) + pay-per-audit ($0.20) A2MCP on OKX x402 (X Layer). Self-contained sibling of EdgeLedger.",
   "engines": {
     "node": "20.x"
   },
@@ -23,7 +23,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --silent",
-    "ci": "npm run lint && npm run typecheck && npm run test:coverage"
+    "ci": "npm run lint && npm run typecheck && npm run test:coverage",
+    "bazaar-settle": "tsx scripts/bazaar-settle.ts",
+    "bazaar-index": "tsx scripts/bazaar-index-check.ts"
   },
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.55.0",
