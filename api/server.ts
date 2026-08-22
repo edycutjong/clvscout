@@ -19,6 +19,7 @@ import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { okxPayGate } from "./rails/okx";
+import { buildCdpPayGateLazy } from "./rails/cdp";
 import { paramPreflight } from "./validate";
 import {
   gradeHandler,
@@ -82,7 +83,11 @@ export function createApp(): express.Express {
   //     clients) that read the body need the full challenge.
   //  4. Mirror the settlement `PAYMENT-RESPONSE` header into
   //     `X-PAYMENT-RESPONSE` for v1-style clients.
-  if (PAY_RAIL === "okx") {
+  // TWO RAILS, ONE PRODUCT. PAY_RAIL=okx settles USD₮0 on X Layer via the OKX
+  // facilitator (the OKX.AI listing); PAY_RAIL=cdp settles USDC on Base via the
+  // Coinbase facilitator and is indexed by the x402 Bazaar. Everything below —
+  // preflight, handlers, engine, ledger — is identical on both.
+  if (PAY_RAIL === "okx" || PAY_RAIL === "cdp") {
     app.use(["/api/grade", "/api/audit"], (req: Request, res: Response, next: NextFunction) => {
       req.headers.accept = "application/json";
       if (!req.headers["payment-signature"] && req.headers["x-payment"]) {
@@ -115,7 +120,7 @@ export function createApp(): express.Express {
     // already holds a signed challenge — the signature is never verified and
     // never settled. See api/validate.ts for the three cases.
     app.use(paramPreflight());
-    app.use(okxPayGate());
+    app.use(PAY_RAIL === "cdp" ? buildCdpPayGateLazy() : okxPayGate());
   }
 
   // Paid GET support: OKX's x402 client sends business params in the query

@@ -14,6 +14,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const PAY_RAIL = process.env.PAY_RAIL ?? "okx";
 
+// ── x402 Bazaar rail (Coinbase CDP · Base · USDC) ───────────────────────────
+// A SECOND venue for the same product, selected with PAY_RAIL=cdp. x402 is a
+// Linux Foundation standard, not an OKX feature, so the engine, ledger and the
+// validate-before-payment preflight are all venue-agnostic and reaching Base is
+// a rail swap. The OKX rail stays the default and is untouched.
+//
+// Sibling EdgeLedger runs the same rail; see its api/rails/cdp.ts. Bazaar
+// indexing needs public HTTPS + POST /platform/v2/x402/validate + ONE real
+// settlement through the CDP facilitator, and then runs on Coinbase's own
+// asynchronous cadence.
+export const CDP_API_KEY_ID = process.env.CDP_API_KEY_ID ?? "";
+export const CDP_API_KEY_SECRET = process.env.CDP_API_KEY_SECRET ?? "";
+export const HAS_REAL_CDP_CREDS = !!(CDP_API_KEY_ID && CDP_API_KEY_SECRET);
+/** 'production' = Base mainnet · 'development' = Base Sepolia. */
+export const CDP_ENV = (process.env.CDP_X402_SERVER_ENVIRONMENT ?? "production") as "production" | "development";
+/**
+ * Bazaar prices, as x402 amount strings — deliberately NOT the $0.01/$0.20 OKX
+ * prices. The 888-agent market scan (_notes/ASP_REVENUE_STRATEGY.md) found the
+ * >$10 band takes 52% of GMV on 1/68th of the volume, while 356 agents priced
+ * at a penny share $235 between them. A 25-bet dossier with a disclosed Sharp
+ * Score is a research report, so it carries the higher price of the two.
+ */
+export const CDP_GRADE_PRICE = process.env.CDP_GRADE_PRICE ?? "$5.00";
+export const CDP_AUDIT_PRICE = process.env.CDP_AUDIT_PRICE ?? "$25.00";
+
 export const PORT = Number(process.env.PORT ?? 4021);
 
 /** eip155:1952 = X Layer rehearsal (testnet); eip155:196 = X Layer mainnet (listing). */

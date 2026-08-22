@@ -37,7 +37,7 @@
  */
 import type { Request, RequestHandler, Response, NextFunction } from "express";
 import { z } from "zod";
-import { AUDIT_MAX_BETS } from "../config";
+import { AUDIT_MAX_BETS, PAY_RAIL } from "../config";
 
 // `z.coerce.number()` (not `z.number()`): paid GETs carry params in the query
 // string, where every value arrives as a string.
@@ -163,7 +163,19 @@ export function paramPreflight(): RequestHandler {
 
     // Case 1: the marketplace reachability probe / `onchainos payment quote` —
     // an unpaid, param-less GET. Let the SDK answer it with the real challenge.
-    if (!paid && (req.method === "GET" || req.method === "HEAD") && hasNoParams(params)) {
+    // Which shapes count as discovery is VENUE-SPECIFIC — the two marketplaces
+    // disagree. OKX.AI requires validation BEFORE the challenge and its
+    // validator sends a body (`x402-check --body`), so only a param-less GET
+    // needs the exception there. Coinbase's Bazaar validator probes with a
+    // param-less POST and reports "Skipped: endpoint did not return 402" on
+    // every check otherwise, so the service is never indexed.
+    //
+    // Widening this does not weaken the OKX guarantee, which is about MONEY:
+    // a request carrying a payment header is still validated ahead of the gate
+    // below, so an invalid paid call is never verified and never settled.
+    const isDiscoveryShape =
+      req.method === "GET" || req.method === "HEAD" || (PAY_RAIL === "cdp" && req.method === "POST");
+    if (!paid && isDiscoveryShape && hasNoParams(params)) {
       next();
       return;
     }
