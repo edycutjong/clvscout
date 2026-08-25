@@ -65,6 +65,9 @@
   "bugs": {
     "url": "https://github.com/edycutjong/clvscout/issues"
   },
+  "overrides": {
+    "axios": "^1.18.0"
+  },
   "keywords": [
     "okx",
     "x402",
